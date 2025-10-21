@@ -18,7 +18,11 @@ import {
   Clock,
   User,
   LayoutDashboard,
-  X
+  X,
+  Save,
+  Phone,
+  Mail,
+  MapPin
 } from 'lucide-react';
 import { HouseForm } from './HouseForm';
 import { HouseDetails } from './HouseDetails';
@@ -41,6 +45,59 @@ export const OwnerDashboard: React.FC = () => {
 
   // State for booking management
   const [showAllBookings, setShowAllBookings] = useState(false);
+
+  // State for profile editing
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editProfile, setEditProfile] = useState({
+    full_name: profile?.full_name || '',
+    phone: profile?.phone || '',
+    address: profile?.address || ''
+  });
+
+  // Profile management functions
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setEditProfile({
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      address: profile?.address || ''
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editProfile.full_name,
+          phone: editProfile.phone,
+          address: editProfile.address
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setIsEditingProfile(false);
+      // Refresh the page or update the profile state
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erreur lors de la mise à jour du profil');
+    }
+  };
+
+  const handleProfileInputChange = (field: string, value: string) => {
+    setEditProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   // State for calendar
   const [showCalendar, setShowCalendar] = useState(false);
@@ -399,7 +456,7 @@ export const OwnerDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 relative">
       {/* Mobile Menu Overlay */}
-      <div 
+      <div
         className={`fixed inset-0 z-50 transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} md:hidden`}
         onClick={() => setMobileMenuOpen(false)}
       >
@@ -407,7 +464,7 @@ export const OwnerDashboard: React.FC = () => {
       </div>
 
       {/* Mobile Sidebar */}
-      <div 
+      <div
         className={`fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         } md:hidden`}
@@ -424,7 +481,7 @@ export const OwnerDashboard: React.FC = () => {
                   <p className="text-xs text-slate-600">Propriétaire</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1 rounded-md hover:bg-slate-100"
                 aria-label="Fermer le menu"
@@ -483,8 +540,8 @@ export const OwnerDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="md:hidden p-2 -ml-1 rounded-md text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ci-orange-500"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Ouvrir le menu"
@@ -507,8 +564,8 @@ export const OwnerDashboard: React.FC = () => {
               <button
                 onClick={() => setCurrentView('profile' as DashboardView)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${
-                  currentView === ('profile' as DashboardView) 
-                    ? 'bg-slate-100 text-slate-900' 
+                  currentView === ('profile' as DashboardView)
+                    ? 'bg-slate-100 text-slate-900'
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
@@ -535,400 +592,541 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-        {/* Background animations */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-ci-green-200/20 to-ci-orange-200/20 rounded-full blur-3xl opacity-40 animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/20 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
-        </div>
+      {/* Profile View */}
+      {currentView === 'profile' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Mon Profil</h1>
+              <p className="text-slate-600">Gérez vos informations personnelles</p>
+            </div>
 
-        {/* Welcome Section */}
-        <div className="mb-8 relative z-10">
-          <div className="bg-gradient-to-r from-ci-orange-600 to-ci-green-600 rounded-3xl p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Bienvenue, {profile?.full_name || 'Propriétaire'} !</h1>
-                <p className="text-ci-orange-100 text-lg">Gérez vos propriétés et suivez vos performances</p>
-              </div>
-              <div className="hidden md:flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{stats.totalHouses}</div>
-                  <div className="text-sm text-ci-orange-100">Propriétés</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
-                  <div className="text-sm text-ci-orange-100">Occupation</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</div>
-                  <div className="text-sm text-ci-orange-100">FCFA</div>
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-ci-orange-600 to-ci-green-600 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-white">
+                    <h2 className="text-xl font-bold">{profile?.full_name || 'Utilisateur'}</h2>
+                    <p className="text-ci-orange-100">{profile?.email}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
-          <div
-            onClick={() => handleCardClick('total')}
-            className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${
-              selectedCardFilter === 'total' ? 'ring-2 ring-ci-orange-500 bg-ci-orange-50' : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600 font-medium">Total Maisons</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
-                <p className="text-xs text-slate-500 mt-1">Propriétés enregistrées</p>
-              </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-ci-green-500 to-ci-orange-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Home className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          </div>
 
-          <div
-            onClick={() => handleCardClick('available')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'available' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Disponibles</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.availableHouses}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Home className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
+              <div className="p-8">
+                {!isEditingProfile ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <User className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Nom complet</p>
+                          <p className="font-medium text-slate-900">{profile?.full_name || 'Non défini'}</p>
+                        </div>
+                      </div>
 
-          <div
-            onClick={() => handleCardClick('occupied')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'occupied' ? 'ring-2 ring-amber-500 bg-amber-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Occupées</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupiedHouses}</p>
-              </div>
-              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-          </div>
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <Phone className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Téléphone</p>
+                          <p className="font-medium text-slate-900">{profile?.phone || 'Non défini'}</p>
+                        </div>
+                      </div>
 
-          <div
-            onClick={() => handleCardClick('occupancy')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'occupancy' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Taux d'occupation</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupancyRate}%</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <MapPin className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Adresse</p>
+                          <p className="font-medium text-slate-900">{profile?.address || 'Non définie'}</p>
+                        </div>
+                      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div
-            onClick={() => handleCardClick('total')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'total' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Total Réservations</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <Mail className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Email</p>
+                          <p className="font-medium text-slate-900">{profile?.email}</p>
+                        </div>
+                      </div>
+                    </div>
 
-          <div
-            onClick={() => handleCardClick('active')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'active' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Réservations Actives</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.activeBookings}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
+                    <div className="flex justify-center pt-6">
+                      <button
+                        onClick={handleEditProfile}
+                        className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <Edit className="w-5 h-5" />
+                        Modifier le profil
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Nom complet
+                        </label>
+                        <input
+                          type="text"
+                          value={editProfile.full_name}
+                          onChange={(e) => handleProfileInputChange('full_name', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition"
+                          placeholder="Votre nom complet"
+                        />
+                      </div>
 
-          <div
-            onClick={() => handleCardClick('pending')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">En Attente</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.pendingBookings}</p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Téléphone
+                        </label>
+                        <input
+                          type="tel"
+                          value={editProfile.phone}
+                          onChange={(e) => handleProfileInputChange('phone', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition"
+                          placeholder="Votre numéro de téléphone"
+                        />
+                      </div>
 
-          <div
-            onClick={() => handleCardClick('revenue')}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-              selectedCardFilter === 'revenue' ? 'ring-2 ring-emerald-500 bg-emerald-50' : 'hover:shadow-lg'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Revenus Totaux</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-slate-500">FCFA</p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-emerald-600" />
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Adresse
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={editProfile.address}
+                          onChange={(e) => handleProfileInputChange('address', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition resize-none"
+                          placeholder="Votre adresse complète"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 justify-center pt-6">
+                      <button
+                        onClick={handleSaveProfile}
+                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <Save className="w-5 h-5" />
+                        Sauvegarder
+                      </button>
+
+                      <button
+                        onClick={handleCancelEdit}
+                        className="bg-slate-500 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Réservations Récentes</h3>
-            {loading ? (
-              <div className="text-center py-8 text-slate-500">Chargement...</div>
-            ) : getFilteredBookings().length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                Aucune réservation pour le moment
+      {/* Dashboard View */}
+      {currentView === 'dashboard' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+          {/* Background animations */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-ci-green-200/20 to-ci-orange-200/20 rounded-full blur-3xl opacity-40 animate-pulse"></div>
+            <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/20 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
+          </div>
+
+          {/* Welcome Section */}
+          <div className="mb-8 relative z-10">
+            <div className="bg-gradient-to-r from-ci-orange-600 to-ci-green-600 rounded-3xl p-8 text-white shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Bienvenue, {profile?.full_name || 'Propriétaire'} !</h1>
+                  <p className="text-ci-orange-100 text-lg">Gérez vos propriétés et suivez vos performances</p>
+                </div>
+                <div className="hidden md:flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.totalHouses}</div>
+                    <div className="text-sm text-ci-orange-100">Propriétés</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
+                    <div className="text-sm text-ci-orange-100">Occupation</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</div>
+                    <div className="text-sm text-ci-orange-100">FCFA</div>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {getFilteredBookings().slice(0, 5).map((booking) => {
-                  const house = houses.find(h => h.id === booking.house_id);
-                  return (
-                    <div
-                      key={booking.id}
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition cursor-pointer group"
-                      onClick={() => handleContactTenant(booking)}
-                    >
-                      <div className="flex-1">
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${
+                selectedCardFilter === 'total' ? 'ring-2 ring-ci-orange-500 bg-ci-orange-50' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium">Total Maisons</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
+                  <p className="text-xs text-slate-500 mt-1">Propriétés enregistrées</p>
+                </div>
+                <div className="w-14 h-14 bg-gradient-to-br from-ci-green-500 to-ci-orange-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Home className="w-7 h-7 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('available')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'available' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Disponibles</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.availableHouses}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Home className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('occupied')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'occupied' ? 'ring-2 ring-amber-500 bg-amber-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Occupées</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupiedHouses}</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('occupancy')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'occupancy' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Taux d'occupation</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupancyRate}%</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'total' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Total Réservations</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('active')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'active' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Réservations Actives</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.activeBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('pending')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">En Attente</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.pendingBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('revenue')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
+                selectedCardFilter === 'revenue' ? 'ring-2 ring-emerald-500 bg-emerald-50' : 'hover:shadow-lg'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Revenus Totaux</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">FCFA</p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Réservations Récentes</h3>
+              {loading ? (
+                <div className="text-center py-8 text-slate-500">Chargement...</div>
+              ) : getFilteredBookings().length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  Aucune réservation pour le moment
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {getFilteredBookings().slice(0, 5).map((booking) => {
+                    const house = houses.find(h => h.id === booking.house_id);
+                    return (
+                      <div
+                        key={booking.id}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition cursor-pointer group"
+                        onClick={() => handleContactTenant(booking)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              booking.status === 'confirmed' ? 'bg-green-500' :
+                              booking.status === 'pending' ? 'bg-yellow-500' :
+                              booking.status === 'cancelled' ? 'bg-red-500' :
+                              'bg-blue-500'
+                            }`}></div>
+                            <div>
+                              <p className="font-medium text-slate-900 group-hover:text-ci-orange-600 transition">
+                                {house?.title || 'Propriété inconnue'}
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                {new Date(booking.created_at).toLocaleDateString()} • {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-500' :
-                            booking.status === 'pending' ? 'bg-yellow-500' :
-                            booking.status === 'cancelled' ? 'bg-red-500' :
-                            'bg-blue-500'
-                          }`}></div>
-                          <div>
-                            <p className="font-medium text-slate-900 group-hover:text-ci-orange-600 transition">
-                              {house?.title || 'Propriété inconnue'}
-                            </p>
-                            <p className="text-sm text-slate-600">
-                              {new Date(booking.created_at).toLocaleDateString()} • {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
-                            </p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {booking.status === 'confirmed' ? 'Confirmée' :
+                             booking.status === 'pending' ? 'En attente' :
+                             booking.status === 'cancelled' ? 'Annulée' :
+                             booking.status === 'active' ? 'Active' :
+                             booking.status === 'completed' ? 'Terminée' :
+                             booking.status}
+                          </span>
+                          {booking.commission_fee && (
+                            <span className="text-sm font-medium text-slate-700">
+                              {booking.commission_fee.toLocaleString()} FCFA
+                            </span>
+                          )}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button className="p-1 hover:bg-white rounded">
+                              <Eye className="w-4 h-4 text-slate-600" />
+                            </button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {booking.status === 'confirmed' ? 'Confirmée' :
-                           booking.status === 'pending' ? 'En attente' :
-                           booking.status === 'cancelled' ? 'Annulée' :
-                           booking.status === 'active' ? 'Active' :
-                           booking.status === 'completed' ? 'Terminée' :
-                           booking.status}
-                        </span>
-                        {booking.commission_fee && (
-                          <span className="text-sm font-medium text-slate-700">
-                            {booking.commission_fee.toLocaleString()} FCFA
-                          </span>
-                        )}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-1 hover:bg-white rounded">
-                            <Eye className="w-4 h-4 text-slate-600" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {getFilteredBookings().length > 5 && (
-                  <button
-                    onClick={handleViewAllBookings}
-                    className="w-full text-ci-orange-600 hover:text-ci-orange-700 font-medium py-2 text-sm hover:bg-ci-orange-50 rounded-lg transition"
-                  >
-                    Voir toutes les réservations ({getFilteredBookings().length}) →
-                  </button>
-                )}
+                    );
+                  })}
+                  {getFilteredBookings().length > 5 && (
+                    <button
+                      onClick={handleViewAllBookings}
+                      className="w-full text-ci-orange-600 hover:text-ci-orange-700 font-medium py-2 text-sm hover:bg-ci-orange-50 rounded-lg transition"
+                    >
+                      Voir toutes les réservations ({getFilteredBookings().length}) →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Actions Rapides</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setShowHouseForm(true)}
+                  className="flex flex-col items-center p-4 bg-ci-orange-50 hover:bg-ci-orange-100 rounded-lg transition"
+                >
+                  <Plus className="w-8 h-8 text-ci-orange-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Ajouter Maison</span>
+                </button>
+
+                <button
+                  onClick={() => setCurrentView('profile')}
+                  className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                >
+                  <Edit className="w-8 h-8 text-blue-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Modifier Profil</span>
+                </button>
+
+                <button
+                  onClick={handleViewSite}
+                  className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                >
+                  <ExternalLink className="w-8 h-8 text-green-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Voir le Site</span>
+                </button>
+
+                <button
+                  onClick={handleShowCalendar}
+                  className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
+                >
+                  <Calendar className="w-8 h-8 text-purple-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Calendrier</span>
+                </button>
               </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Actions Rapides</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setShowHouseForm(true)}
-                className="flex flex-col items-center p-4 bg-ci-orange-50 hover:bg-ci-orange-100 rounded-lg transition"
-              >
-                <Plus className="w-8 h-8 text-ci-orange-600 mb-2" />
-                <span className="text-sm font-medium text-slate-700">Ajouter Maison</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentView('profile')}
-                className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
-              >
-                <Edit className="w-8 h-8 text-blue-600 mb-2" />
-                <span className="text-sm font-medium text-slate-700">Modifier Profil</span>
-              </button>
-
-              <button
-                onClick={handleViewSite}
-                className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
-              >
-                <ExternalLink className="w-8 h-8 text-green-600 mb-2" />
-                <span className="text-sm font-medium text-slate-700">Voir le Site</span>
-              </button>
-
-              <button
-                onClick={handleShowCalendar}
-                className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
-              >
-                <Calendar className="w-8 h-8 text-purple-600 mb-2" />
-                <span className="text-sm font-medium text-slate-700">Calendrier</span>
-              </button>
             </div>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-ci-orange-600"></div>
-          </div>
-        ) : houses.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-            <Home className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">Aucune propriété</h3>
-            <p className="text-slate-600 mb-6">
-              Commencez par ajouter votre première propriété
-            </p>
-            <button
-              onClick={() => setShowHouseForm(true)}
-              className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition"
-            >
-              Ajouter une maison
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getFilteredHouses().map((house) => (
-              <div
-                key={house.id}
-                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition"
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-ci-orange-600"></div>
+            </div>
+          ) : houses.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+              <Home className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">Aucune propriété</h3>
+              <p className="text-slate-600 mb-6">
+                Commencez par ajouter votre première propriété
+              </p>
+              <button
+                onClick={() => setShowHouseForm(true)}
+                className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition"
               >
-                <div className="aspect-video bg-slate-200 relative">
-                  {house.video_url ? (
-                    <video
-                      src={house.video_url}
-                      controls
-                      className="w-full h-full object-cover"
-                    />
-                  ) : house.image_url ? (
-                    <img
-                      src={house.image_url}
-                      alt={house.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-12 h-12 text-slate-400" />
+                Ajouter une maison
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {getFilteredHouses().map((house) => (
+                <div
+                  key={house.id}
+                  className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition"
+                >
+                  <div className="aspect-video bg-slate-200 relative">
+                    {house.video_url ? (
+                      <video
+                        src={house.video_url}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    ) : house.image_url ? (
+                      <img
+                        src={house.image_url}
+                        alt={house.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="w-12 h-12 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          house.status === 'available'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {house.status === 'available' ? 'Disponible' : 'Pris'}
+                      </span>
                     </div>
-                  )}
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        house.status === 'available'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {house.status === 'available' ? 'Disponible' : 'Pris'}
-                    </span>
+                    {/* Indicateurs pour les fonctionnalités supplémentaires */}
+                    <div className="absolute bottom-3 right-3 flex gap-1">
+                      {house.photos && house.photos.length > 0 && (
+                        <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
+                          <Camera className="w-3 h-3" />
+                        </div>
+                      )}
+                      {house.virtual_tour_url && (
+                        <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
+                          <Play className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {/* Indicateurs pour les fonctionnalités supplémentaires */}
-                  <div className="absolute bottom-3 right-3 flex gap-1">
-                    {house.photos && house.photos.length > 0 && (
-                      <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
-                        <Camera className="w-3 h-3" />
-                      </div>
-                    )}
-                    {house.virtual_tour_url && (
-                      <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
-                        <Play className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-lg text-slate-900 mb-1">{house.title}</h3>
-                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">{house.description}</p>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-bold text-ci-orange-600">
-                      {house.price.toLocaleString()} FCFA
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setViewingHouse(house)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm font-medium"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Voir
-                    </button>
-                    <button
-                      onClick={() => handleEditHouse(house)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition text-sm font-medium"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={() => handleDeleteHouse(house.id)}
-                      className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="p-5">
+                    <h3 className="font-bold text-lg text-slate-900 mb-1">{house.title}</h3>
+                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">{house.description}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-2xl font-bold text-ci-orange-600">
+                        {house.price.toLocaleString()} FCFA
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setViewingHouse(house)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Voir
+                      </button>
+                      <button
+                        onClick={() => handleEditHouse(house)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition text-sm font-medium"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDeleteHouse(house.id)}
+                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <Footer />
     </div>
   );
