@@ -851,7 +851,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 Formation équipe
               </li>
             </ul>
-            <button className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-semibold transition-colors">
+            <button
+              onClick={() => window.location.href = '/contact'}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-semibold transition-colors"
+            >
               Nous contacter
             </button>
           </div>
