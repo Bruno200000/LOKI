@@ -96,8 +96,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
                 <Mail className="h-8 w-8 text-ci-orange-600" />
               </div>
               <h4 className="text-lg font-bold text-slate-900 mb-2">Email</h4>
-              <a href="mailto:contact@loki.app" className="text-slate-600 hover:text-ci-orange-600 transition-colors">
-                contact@loki.app
+              <a href="mailto:loki@gmail.com" className="text-slate-600 hover:text-ci-orange-600 transition-colors">
+                loki@gmail.com
               </a>
             </div>
 
@@ -106,8 +106,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
                 <Phone className="h-8 w-8 text-ci-orange-600" />
               </div>
               <h4 className="text-lg font-bold text-slate-900 mb-2">Téléphone</h4>
-              <a href="tel:+2250102030405" className="text-slate-600 hover:text-ci-orange-600 transition-colors">
-                +225 01 02 03 04 05
+              <a href="tel:+2250170607784" className="text-slate-600 hover:text-ci-orange-600 transition-colors">
+                +225 01 70 60 77 84
               </a>
             </div>
 
@@ -117,7 +117,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
               </div>
               <h4 className="text-lg font-bold text-slate-900 mb-2">Adresse</h4>
               <p className="text-slate-600">
-                Plateau, Abidjan<br />
+                Bouaké, Commerce<br />
                 Côte d'Ivoire
               </p>
             </div>
@@ -141,11 +141,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
               Notre équipe support est disponible pour répondre à vos questions en moins de 24h.
             </p>
             <a
-              href="mailto:support@loki.app"
+              href="mailto:loki@gmail.com"
               className="inline-flex items-center bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
             >
               <Mail className="h-4 w-4 mr-2" />
-              support@loki.app
+              loki@gmail.com
             </a>
           </div>
         </div>
