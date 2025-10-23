@@ -93,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({ className = '' }) => {
 
         <div className="border-t border-slate-800 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-slate-400 text-sm mb-4 md:mb-0">
-            &copy; 2024 LOKI. Tous droits réservés.
+            &copy; 2025 LOKI. Tous droits réservés.
           </p>
           <div className="flex space-x-6 text-sm text-slate-400">
             <span className="hover:text-white transition-colors cursor-pointer">Confidentialité</span>

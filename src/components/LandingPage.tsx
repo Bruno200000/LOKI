@@ -969,7 +969,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
 
           <div className="border-t border-slate-800 pt-6 lg:pt-8 flex flex-col lg:flex-row justify-between items-center">
             <p className="text-slate-400 text-sm mb-4 lg:mb-0">
-              &copy; 2023 LOKI. Tous droits réservés.
+              &copy; 2025 LOKI. Tous droits réservés.
             </p>
             <div className="flex flex-wrap gap-4 lg:gap-6 text-sm text-slate-400">
               <a href="/about" className="hover:text-white transition-colors">À propos</a>
