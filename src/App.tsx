@@ -188,6 +188,23 @@ function AppContent() {
     return <DemoPage />;
   }
 
+  // Handle admin dashboard route
+  if (currentPath === '/admin') {
+    // If user is authenticated and is admin, show admin dashboard
+    if (user && profile && profile.role === 'admin') {
+      return <AdminDashboard />;
+    }
+    // If user is authenticated but not admin, redirect to appropriate dashboard
+    if (user && profile) {
+      if (profile.role === 'owner') {
+        return <OwnerDashboard />;
+      }
+      return <TenantDashboard />;
+    }
+    // If not authenticated, redirect to login
+    return <div></div>; // This will fall through to authentication logic below
+  }
+
   // Handle About and Contact pages - show for all users unless they specifically want to go to dashboard
   if (currentPath === '/about' || currentPath === '/contact') {
     // If user is authenticated and wants to view dashboard (not public pages), redirect to dashboard
