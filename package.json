@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "create-admin": "node create-admin.js"
+    "create-admin": "node create-admin.js",
+    "check-db": "node check-database.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

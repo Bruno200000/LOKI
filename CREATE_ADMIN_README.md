@@ -2,6 +2,19 @@
 
 Ce guide explique comment ajouter un administrateur dans la base de données LOKI.
 
+## Structure de la base de données
+
+La table `public.profiles` a la structure suivante :
+- `id` (uuid) - clé étrangère vers `auth.users(id)`
+- `full_name` (text) - nom complet de l'utilisateur
+- `role` (text) - rôle de l'utilisateur ('admin', 'owner', 'tenant')
+- `created_at` (timestamptz) - date de création
+- `phone` (text) - téléphone
+- `city` (text) - ville
+- `address` (text) - adresse
+
+**Note importante** : La table `profiles` n'a **pas** de champ `email` ni `updated_at`. L'email est stocké dans `auth.users`.
+
 ## Prérequis
 
 1. **Clé de service Supabase** : Vous devez obtenir la `service_role_key` de votre projet Supabase
@@ -29,7 +42,7 @@ Ce guide explique comment ajouter un administrateur dans la base de données LOK
    ```
 
 3. **Identifiants créés** :
-   - **Email** : `admin@gmail.com`
+   - **Email** : `katchabruno52@gmail.com`
    - **Mot de passe** : `44390812`
    - **Rôle** : `admin`
 
@@ -38,7 +51,7 @@ Ce guide explique comment ajouter un administrateur dans la base de données LOK
 1. **Créer l'utilisateur** :
    - Allez sur https://supabase.com/dashboard
    - Authentication > Users > Add user
-   - Email : `admin@gmail.com`
+   - Email : `katchabruno52@gmail.com`
    - Mot de passe : `44390812`
    - Cochez "Email confirm"
 
@@ -48,7 +61,7 @@ Ce guide explique comment ajouter un administrateur dans la base de données LOK
    ```sql
    UPDATE public.profiles
    SET role = 'admin', full_name = 'Administrateur LOKI'
-   WHERE email = 'admin@gmail.com';
+   WHERE id = (SELECT id FROM auth.users WHERE email = 'katchabruno52@gmail.com');
    ```
 
 ## Vérification
@@ -56,9 +69,10 @@ Ce guide explique comment ajouter un administrateur dans la base de données LOK
 Pour vérifier que l'administrateur a été créé :
 
 ```sql
-SELECT id, email, full_name, role, created_at
-FROM public.profiles
-WHERE email = 'admin@gmail.com';
+SELECT p.id, u.email, p.full_name, p.role, p.created_at
+FROM public.profiles p
+JOIN auth.users u ON p.id = u.id
+WHERE u.email = 'katchabruno52@gmail.com';
 ```
 
 ## Utilisation

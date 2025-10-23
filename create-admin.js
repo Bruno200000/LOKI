@@ -27,7 +27,7 @@ async function createAdmin() {
 
     // 1. Créer l'utilisateur via l'API Admin
     const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-      email: 'admin@gmail.com',
+      email: 'katchabruno52@gmail.com',
       password: '44390812',
       email_confirm: true,
       user_metadata: {
@@ -66,11 +66,17 @@ async function createAdmin() {
 
     console.log('✅ Profil mis à jour avec le rôle admin');
 
-    // 4. Vérifier que tout est correct
+    // 4. Vérifier que tout est correct avec une jointure
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('email', 'admin@gmail.com')
+      .select(`
+        id,
+        full_name,
+        role,
+        created_at,
+        auth_users!inner(email)
+      `)
+      .eq('id', userData.user.id)
       .single();
 
     if (fetchError) {
@@ -80,13 +86,13 @@ async function createAdmin() {
 
     console.log('✅ Administrateur créé avec succès!');
     console.log('📋 Informations:');
-    console.log(`   Email: ${profile.email}`);
+    console.log(`   Email: ${profile.auth_users.email}`);
     console.log(`   Nom: ${profile.full_name}`);
     console.log(`   Rôle: ${profile.role}`);
     console.log(`   ID: ${profile.id}`);
     console.log('');
     console.log('🔐 Identifiants de connexion:');
-    console.log(`   Email: admin@gmail.com`);
+    console.log(`   Email: katchabruno52@gmail.com`);
     console.log(`   Mot de passe: 44390812`);
 
   } catch (error) {
