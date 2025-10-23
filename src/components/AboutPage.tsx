@@ -1,14 +1,16 @@
-import React from 'react';
-import { Home, Target, Shield, TrendingUp, Heart, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Target, Shield, TrendingUp, Heart, ArrowRight, Menu, X } from 'lucide-react';
 
 interface AboutPageProps {
-  onGetStarted?: () => void;
+  // Removed unused onGetStarted prop
 }
 
-export const AboutPage: React.FC<AboutPageProps> = ({ onGetStarted }) => {
+export const AboutPage: React.FC<AboutPageProps> = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const handleGetStarted = () => {
-    // Navigate to main site to start registration process
-    window.location.href = '/';
+    // Rediriger directement vers la page de connexion en forçant l'état d'authentification
+    window.location.href = '/?login=true';
   };
 
   const handleNavigation = (path: string) => {
@@ -50,7 +52,78 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onGetStarted }) => {
                 Créer un compte
               </button>
             </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-slate-600 hover:text-slate-900 p-2 rounded-lg transition-colors"
+                aria-label="Toggle mobile menu"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-slate-200 bg-white">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                <button
+                  onClick={() => {
+                    handleNavigation('/');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  Accueil
+                </button>
+                <button
+                  onClick={() => {
+                    handleNavigation('/#features');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  Fonctionnalités
+                </button>
+                <button
+                  onClick={() => {
+                    handleNavigation('/#pricing');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  Tarifs
+                </button>
+                <div className="px-3 py-2 text-ci-orange-600 font-medium">
+                  À propos
+                </div>
+                <button
+                  onClick={() => {
+                    handleNavigation('/contact');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  Contact
+                </button>
+                <button
+                  onClick={() => {
+                    handleGetStarted();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white rounded-lg font-semibold transition-colors mt-2"
+                >
+                  Créer un compte
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -222,8 +295,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onGetStarted }) => {
               <h4 className="font-semibold mb-4 text-white">Support</h4>
               <ul className="space-y-3 text-slate-400">
                 <li><button onClick={() => handleNavigation('/contact')} className="hover:text-white transition-colors">Contact</button></li>
-                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Centre d'aide</button></li>
-                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Documentation</button></li>
+                <li><button onClick={() => handleNavigation('/')} className="hover:text-white transition-colors">Centre d'aide</button></li>
+                <li><button onClick={() => handleNavigation('/')} className="hover:text-white transition-colors">Documentation</button></li>
               </ul>
             </div>
 

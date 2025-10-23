@@ -3,15 +3,19 @@ import { useState, useEffect } from 'react';
 import { supabase, House } from '../lib/supabase';
 
 interface LandingPageProps {
-  onGetStarted: () => void;
   showBackToDashboard?: boolean;
 }
 
-export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPageProps) {
+export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   const [houses, setHouses] = useState<House[]>([]);
   const [recentHouses, setRecentHouses] = useState<House[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleGetStarted = () => {
+    // Rediriger directement vers la page de connexion en forçant l'état d'authentification
+    window.location.href = '/?login=true';
+  };
 
   useEffect(() => {
     fetchFeaturedHouses();
@@ -66,10 +70,10 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <a href="/#features" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Fonctionnalités
               </a>
-              <a href="#pricing" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <a href="/#pricing" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Tarifs
               </a>
               <button onClick={() => window.location.href = '/about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
@@ -87,7 +91,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
                 </button>
               )}
               <button
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
               >
                 Essayer gratuitement
@@ -115,14 +119,14 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
             <div className="md:hidden border-t border-slate-200 bg-white">
               <div className="px-2 pt-2 pb-3 space-y-1">
                 <a
-                  href="#features"
+                  href="/#features"
                   className="block px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Fonctionnalités
                 </a>
                 <a
-                  href="#pricing"
+                  href="/#pricing"
                   className="block px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -159,7 +163,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
                 )}
                 <button
                   onClick={() => {
-                    onGetStarted();
+                    handleGetStarted();
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-3 py-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white rounded-lg font-semibold transition-colors mt-2"
@@ -197,7 +201,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{animationDelay: '0.2s'}}>
               <button
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="inline-flex items-center bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg hover:shadow-xl w-full sm:w-auto justify-center transform hover:scale-105"
               >
                 Commencer gratuitement
@@ -469,7 +473,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Aucune propriété disponible</h3>
               <p className="text-slate-600 mb-6">Revenez bientôt pour découvrir nos nouvelles offres</p>
               <button
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="inline-flex items-center bg-gradient-to-r from-ci-orange-600 to-ci-green-600 hover:from-ci-orange-700 hover:to-ci-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300"
               >
                 Devenir propriétaire
@@ -673,7 +677,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
                       <h3 className="text-lg lg:text-xl font-bold text-slate-900 mb-2">Aucun logement disponible</h3>
                       <p className="text-slate-600 mb-4 lg:mb-6">Revenez bientôt pour découvrir nos nouvelles offres</p>
                       <button
-                        onClick={onGetStarted}
+                        onClick={handleGetStarted}
                         className="inline-flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
                       >
                         Devenir propriétaire
@@ -772,7 +776,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
               </li>
             </ul>
             <button
-              onClick={onGetStarted}
+              onClick={handleGetStarted}
               className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-3 rounded-xl font-semibold transition-colors"
             >
               Commencer
@@ -814,7 +818,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
               </li>
             </ul>
             <button
-              onClick={onGetStarted}
+              onClick={handleGetStarted}
               className="w-full bg-white text-ci-orange-600 hover:bg-slate-50 py-3 rounded-xl font-semibold transition-colors"
             >
               Commencer
@@ -871,7 +875,7 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={onGetStarted}
+              onClick={handleGetStarted}
               className="inline-flex items-center bg-white text-ci-orange-600 hover:bg-slate-50 px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg hover:shadow-xl justify-center"
             >
               Créer mon compte gratuitement

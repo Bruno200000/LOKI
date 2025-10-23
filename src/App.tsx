@@ -140,16 +140,78 @@ function AppContent() {
   const currentPath = window.location.pathname;
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
+  const loginParam = urlParams.get('login');
 
-  // Handle About and Contact pages for public users
-  if (currentPath === '/about') {
-    return <AboutPage onGetStarted={() => setShowLanding(false)} />;
+  // Handle view parameter logic
+  useEffect(() => {
+    if (viewParam === 'public' && user && profile) {
+      // If user wants to view public site, show landing page
+      setShowLanding(true);
+      setForceLogin(false);
+    } else if (!user || !profile) {
+      // If no user, check if we should force login (from property details)
+      const returnToProperty = sessionStorage.getItem('returnToProperty');
+      if (returnToProperty) {
+        setForceLogin(true);
+        setShowLanding(false);
+        // Don't clear the flag here, let Login component handle it
+      } else if (loginParam === 'true') {
+        // Force login screen when login=true parameter is present
+        setForceLogin(true);
+        setShowLanding(false);
+      } else if (!forceLogin) {
+        // Only set showLanding to true if forceLogin is not already true
+        // If forceLogin is true, it means user clicked "Get Started" and we should keep showLanding false
+        setShowLanding(true);
+        setForceLogin(false);
+      }
+    } else {
+      // User is logged in, show their dashboard
+      setShowLanding(false);
+      setForceLogin(false);
+    }
+  }, [user, profile, viewParam, forceLogin, loginParam]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600 mb-4"></div>
+          <p className="text-slate-600 font-medium">Chargement...</p>
+        </div>
+      </div>
+    );
   }
-  if (currentPath === '/contact') {
-    return <ContactPage onGetStarted={() => setShowLanding(false)} />;
-  }
+
+  // Handle URL-based routing FIRST - this should take priority over authentication logic
   if (currentPath === '/demo') {
     return <DemoPage />;
+  }
+
+  // Handle About and Contact pages - show for all users unless they specifically want to go to dashboard
+  if (currentPath === '/about' || currentPath === '/contact') {
+    // If user is authenticated and wants to view dashboard (not public pages), redirect to dashboard
+    if (user && profile && viewParam === 'dashboard') {
+      return <div></div>; // This will fall through to dashboard logic below
+    }
+
+    // If authentication is forced, don't show these pages - go to login
+    if (forceLogin) {
+      return <div></div>; // This will fall through to authentication logic below
+    }
+
+    // If user is not authenticated and wants to login, don't show these pages
+    if (!showLanding && !user) {
+      return <div></div>; // This will fall through to authentication logic below
+    }
+
+    // Show the public pages for all users
+    if (currentPath === '/about') {
+      return <AboutPage />;
+    }
+    if (currentPath === '/contact') {
+      return <ContactPage />;
+    }
   }
 
   // Handle property details page
@@ -173,54 +235,20 @@ function AppContent() {
     return <PaymentPageComponent bookingId={bookingId} />;
   }
 
-  // Handle view parameter logic
-  useEffect(() => {
-    if (viewParam === 'public' && user && profile) {
-      // If user wants to view public site, show landing page
-      setShowLanding(true);
-      setForceLogin(false);
-    } else if (!user || !profile) {
-      // If no user, check if we should force login (from property details)
-      const returnToProperty = sessionStorage.getItem('returnToProperty');
-      if (returnToProperty) {
-        setForceLogin(true);
-        setShowLanding(false);
-        // Don't clear the flag here, let Login component handle it
-      } else {
-        // If no user, show landing page by default
-        setShowLanding(true);
-        setForceLogin(false);
-      }
-    } else {
-      // User is logged in, show their dashboard
-      setShowLanding(false);
-      setForceLogin(false);
-    }
-  }, [user, profile, viewParam]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600 mb-4"></div>
-          <p className="text-slate-600 font-medium">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Authentication logic - this should execute AFTER URL routing
   if (!user || !profile) {
     if (showLanding && !forceLogin) {
-      return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+      return <LandingPage />;
     }
     return <AuthScreen />;
   }
 
   // If user is logged in but viewing public site, show landing page with option to go back
   if (showLanding && user && profile) {
-    return <LandingPage onGetStarted={() => setShowLanding(false)} showBackToDashboard />;
+    return <LandingPage showBackToDashboard />;
   }
 
+  // Show dashboards for authenticated users
   if (profile.role === 'admin') {
     return <AdminDashboard />;
   }
