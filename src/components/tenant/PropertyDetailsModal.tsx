@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { House } from '../../lib/supabase';
-import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface PropertyDetailsModalProps {
@@ -10,6 +10,39 @@ interface PropertyDetailsModalProps {
 
 export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ house, onClose }) => {
   const { user } = useAuth();
+
+  // Fonction pour générer un nombre de personnes regardant basé sur l'ID de la propriété
+  const getViewersCount = (propertyId: number) => {
+    // Convertir en string pour le hash
+    const idString = propertyId.toString();
+    // Utilise l'ID pour créer un nombre cohérent mais variable par propriété
+    const hash = idString.split('').reduce((acc, char) => {
+      return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+    return Math.abs(hash % 50) + 5; // Entre 5 et 54 personnes
+  };
+
+  const viewersCount = getViewersCount(house.id);
+
+  // État pour le carrousel d'images
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Fonctions de navigation du carrousel
+  const nextImage = () => {
+    if (house.photos) {
+      setCurrentImageIndex((prev) => (prev + 1) % house.photos!.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (house.photos) {
+      setCurrentImageIndex((prev) => (prev - 1 + house.photos!.length) % house.photos!.length);
+    }
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   const handleBookingClick = () => {
     // Check if user is authenticated
@@ -81,19 +114,52 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                 <div className="mb-4">
                   <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Photos de la propriété
+                    Photos de la propriété ({house.photos.length})
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                    {house.photos.map((photo, index) => (
-                      <div key={index} className="aspect-square bg-slate-200 rounded-lg overflow-hidden">
-                        <img
-                          src={photo}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-                          onClick={() => window.open(photo, '_blank')}
-                        />
-                      </div>
-                    ))}
+
+                  {/* Carrousel d'images */}
+                  <div className="relative">
+                    <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden mb-4">
+                      <img
+                        src={house.photos[currentImageIndex]}
+                        alt={`Photo ${currentImageIndex + 1}`}
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => window.open(house.photos![currentImageIndex], '_blank')}
+                      />
+                    </div>
+
+                    {/* Boutons de navigation */}
+                    {house.photos.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full shadow-lg transition-all"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-slate-700" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full shadow-lg transition-all"
+                        >
+                          <ChevronRight className="w-5 h-5 text-slate-700" />
+                        </button>
+
+                        {/* Indicateurs */}
+                        <div className="flex justify-center gap-2 mt-3">
+                          {house.photos.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => goToImage(index)}
+                              className={`w-2 h-2 rounded-full transition-all ${
+                                index === currentImageIndex
+                                  ? 'bg-ci-orange-600'
+                                  : 'bg-slate-300 hover:bg-slate-400'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -145,6 +211,15 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-3">{house.title}</h3>
                   <p className="text-slate-600 leading-relaxed">{house.description}</p>
+
+                  {/* Message des personnes regardant */}
+                  <div className="mt-4 p-2">
+                    <p className="text-red-500 font-medium text-sm flex items-center gap-2 animate-pulse">
+                      <Eye className="w-4 h-4" />
+                      <span className="text-red-600 font-bold">{viewersCount}</span>
+                      personne{viewersCount > 1 ? 's' : ''} regarde{viewersCount > 1 ? 'nt' : ''} cette propriété en ce moment
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
