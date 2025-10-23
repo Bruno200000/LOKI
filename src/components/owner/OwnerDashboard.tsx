@@ -178,19 +178,72 @@ export const OwnerDashboard: React.FC = () => {
 
   const fetchBookings = async () => {
     if (!profile?.id) return;
-    
+
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // Fetch bookings without joins first
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('*, houses(*)')
-        .eq('house_owner_id', profile.id)
-        .order('start_date', { ascending: false });
+        .select(`
+          id,
+          house_id,
+          tenant_id,
+          owner_id,
+          start_date,
+          end_date,
+          move_in_date,
+          status,
+          commission_fee,
+          monthly_rent,
+          notes,
+          created_at
+        `)
+        .eq('owner_id', profile.id)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setBookings(data || []);
+      if (bookingsError) {
+        console.error('❌ Erreur fetchBookings:', bookingsError);
+        throw bookingsError;
+      }
+
+      // Fetch related profiles
+      const userIds = new Set<string>();
+      bookingsData?.forEach(booking => {
+        userIds.add(booking.tenant_id);
+        userIds.add(booking.owner_id);
+      });
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone')
+        .in('id', Array.from(userIds));
+
+      if (profilesError) throw profilesError;
+
+      // Fetch related houses
+      const houseIds = new Set<number>();
+      bookingsData?.forEach(booking => {
+        houseIds.add(booking.house_id);
+      });
+
+      const { data: housesData, error: housesError } = await supabase
+        .from('houses')
+        .select('id, title, address, city')
+        .in('id', Array.from(houseIds));
+
+      if (housesError) throw housesError;
+
+      // Combine the data
+      const bookingsWithDetails = bookingsData?.map(booking => ({
+        ...booking,
+        tenant_profile: profilesData?.find(p => p.id === booking.tenant_id) || null,
+        house_info: housesData?.find(h => h.id === booking.house_id) || null
+      }));
+
+      console.log('✅ Réservations récupérées:', bookingsWithDetails);
+      setBookings(bookingsWithDetails || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('❌ Erreur fetchBookings:', error);
     } finally {
       setLoading(false);
     }
@@ -297,11 +350,17 @@ export const OwnerDashboard: React.FC = () => {
                             'bg-blue-500'
                           }`}></div>
                           <div>
-                            <p className="font-medium text-slate-900">{house?.title || 'Propriété inconnue'}</p>
+                            <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
                             <p className="text-sm text-slate-600">
                               {new Date(booking.created_at).toLocaleDateString()} •
-                              {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
+                              {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date || booking.move_in_date).toLocaleDateString()}
                             </p>
+                            {booking.tenant_profile?.full_name && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                Locataire: {booking.tenant_profile.full_name}
+                                {booking.tenant_profile.phone && ` • ${booking.tenant_profile.phone}`}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -404,16 +463,21 @@ export const OwnerDashboard: React.FC = () => {
                                   'bg-blue-500'
                                 }`}></div>
                                 <div>
-                                  <p className="font-medium text-slate-900">{house?.title || 'Propriété inconnue'}</p>
+                                  <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
                                   <p className="text-sm text-slate-600">
                                     {new Date(booking.start_date).toLocaleTimeString('fr-FR', {
                                       hour: '2-digit',
                                       minute: '2-digit'
-                                    })} - {new Date(booking.end_date).toLocaleTimeString('fr-FR', {
+                                    })} - {new Date(booking.end_date || booking.move_in_date).toLocaleTimeString('fr-FR', {
                                       hour: '2-digit',
                                       minute: '2-digit'
                                     })}
                                   </p>
+                                  {booking.tenant_profile?.full_name && (
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      Locataire: {booking.tenant_profile.full_name}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
 

@@ -85,6 +85,23 @@ export interface Booking {
   monthly_rent: number;
   notes?: string | null;
   created_at: string;
+
+  // Joined profile and house information
+  tenant_profile?: {
+    id: string;
+    full_name: string | null;
+    phone: string | null;
+  } | null;
+  owner_profile?: {
+    id: string;
+    full_name: string | null;
+  } | null;
+  house_info?: {
+    id: number;
+    title: string;
+    address: string;
+    city: string;
+  } | null;
 }
 
 export interface Payment {
