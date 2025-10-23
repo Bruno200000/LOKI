@@ -7,12 +7,8 @@ interface ContactPageProps {
 
 export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
   const handleGetStarted = () => {
-    if (onGetStarted) {
-      onGetStarted();
-    } else {
-      // Navigate to main site or registration
-      window.location.href = '/';
-    }
+    // Navigate to main site to start registration process
+    window.location.href = '/';
   };
 
   const handleNavigation = (path: string) => {
@@ -51,7 +47,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
                 onClick={handleGetStarted}
                 className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
               >
-                Commencer
+                Créer un compte
               </button>
             </div>
           </div>
@@ -167,7 +163,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
               onClick={handleGetStarted}
               className="inline-flex items-center bg-white text-ci-orange-600 hover:bg-slate-50 px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg hover:shadow-xl justify-center"
             >
-              Commencer maintenant
+              Créer mon compte
               <ArrowRight className="ml-2 h-5 w-5" />
             </button>
             <a

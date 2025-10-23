@@ -7,12 +7,8 @@ interface AboutPageProps {
 
 export const AboutPage: React.FC<AboutPageProps> = ({ onGetStarted }) => {
   const handleGetStarted = () => {
-    if (onGetStarted) {
-      onGetStarted();
-    } else {
-      // Navigate to main site or registration
-      window.location.href = '/';
-    }
+    // Navigate to main site to start registration process
+    window.location.href = '/';
   };
 
   const handleNavigation = (path: string) => {
@@ -51,7 +47,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onGetStarted }) => {
                 onClick={handleGetStarted}
                 className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
               >
-                Commencer
+                Créer un compte
               </button>
             </div>
           </div>

@@ -72,6 +72,12 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
               <a href="#pricing" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Tarifs
               </a>
+              <button onClick={() => window.location.href = '/about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+                À propos
+              </button>
+              <button onClick={() => window.location.href = '/contact'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+                Contact
+              </button>
               {showBackToDashboard && (
                 <button
                   onClick={() => window.location.href = '/?view=dashboard'}
@@ -122,6 +128,24 @@ export function LandingPage({ onGetStarted, showBackToDashboard }: LandingPagePr
                 >
                   Tarifs
                 </a>
+                <button
+                  onClick={() => {
+                    window.location.href = '/about';
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  À propos
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.href = '/contact';
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+                >
+                  Contact
+                </button>
                 {showBackToDashboard && (
                   <button
                     onClick={() => {
