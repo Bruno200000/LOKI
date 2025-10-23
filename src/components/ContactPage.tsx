@@ -15,6 +15,10 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
     }
   };
 
+  const handleNavigation = (path: string) => {
+    window.location.href = path;
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -28,21 +32,21 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
               <span className="text-2xl font-bold text-slate-900">LOKI</span>
             </div>
             <div className="flex items-center space-x-6">
-              <a href="/" className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
+              <button onClick={() => handleNavigation('/')} className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
                 Accueil
-              </a>
-              <a href="#features" className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
+              </button>
+              <button onClick={() => handleNavigation('/#features')} className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
                 Fonctionnalités
-              </a>
-              <a href="#pricing" className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
+              </button>
+              <button onClick={() => handleNavigation('/#pricing')} className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
                 Tarifs
-              </a>
-              <a href="/about" className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
+              </button>
+              <button onClick={() => handleNavigation('/about')} className="text-slate-600 hover:text-slate-900 font-medium hidden md:block">
                 À propos
-              </a>
-              <a href="/contact" className="text-ci-orange-600 font-medium hidden md:block">
+              </button>
+              <span className="text-ci-orange-600 font-medium hidden md:block">
                 Contact
-              </a>
+              </span>
               <button
                 onClick={handleGetStarted}
                 className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors"
@@ -168,6 +172,10 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
             </button>
             <a
               href="/about"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigation('/about');
+              }}
               className="inline-flex items-center border-2 border-white text-white hover:bg-white hover:text-ci-orange-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all justify-center"
             >
               En savoir plus
@@ -206,29 +214,29 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onGetStarted }) => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Produit</h4>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="/" className="hover:text-white transition-colors">Accueil</a></li>
-                <li><a href="#features" className="hover:text-white transition-colors">Fonctionnalités</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Tarifs</a></li>
-                <li><a href="/about" className="hover:text-white transition-colors">À propos</a></li>
+                <li><button onClick={() => handleNavigation('/')} className="hover:text-white transition-colors">Accueil</button></li>
+                <li><button onClick={() => handleNavigation('/#features')} className="hover:text-white transition-colors">Fonctionnalités</button></li>
+                <li><button onClick={() => handleNavigation('/#pricing')} className="hover:text-white transition-colors">Tarifs</button></li>
+                <li><button onClick={() => handleNavigation('/about')} className="hover:text-white transition-colors">À propos</button></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold mb-4 text-white">Support</h4>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Centre d'aide</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
+                <li><span className="text-ci-orange-400">Contact</span></li>
+                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Centre d'aide</button></li>
+                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Documentation</button></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold mb-4 text-white">Entreprise</h4>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="/about" className="hover:text-white transition-colors">À propos</a></li>
-                <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Carrières</a></li>
+                <li><button onClick={() => handleNavigation('/about')} className="hover:text-white transition-colors">À propos</button></li>
+                <li><span className="text-ci-orange-400">Contact</span></li>
+                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Blog</button></li>
+                <li><button onClick={() => handleNavigation('/#')} className="hover:text-white transition-colors">Carrières</button></li>
               </ul>
             </div>
           </div>
