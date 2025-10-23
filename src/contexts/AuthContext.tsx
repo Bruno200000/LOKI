@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, Profile } from '../lib/supabase';
+import { SecurityUtils, SecurityMiddleware } from '../lib/security';
 
 interface AuthContextType {
   user: User | null;
@@ -64,11 +65,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                            session.user.user_metadata?.name ||
                            session.user.email?.split('@')[0] || 'User';
 
+            // Validation du nom avant insertion
+            const nameValidation = SecurityUtils.validateFullName(fullName);
+            if (!nameValidation.isValid) {
+              console.error('Invalid name provided:', nameValidation.errors);
+              return;
+            }
+
+            const sanitizedName = SecurityUtils.sanitizeInput(fullName);
+
             const { data: newProfile } = await supabase
               .from('profiles')
               .insert({
                 id: session.user.id,
-                full_name: fullName,
+                full_name: sanitizedName,
                 role: 'tenant',
               })
               .select()
@@ -97,11 +107,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                            session.user.user_metadata?.name ||
                            session.user.email?.split('@')[0] || 'User';
 
+            // Validation du nom avant insertion
+            const nameValidation = SecurityUtils.validateFullName(fullName);
+            if (!nameValidation.isValid) {
+              console.error('Invalid name provided:', nameValidation.errors);
+              return;
+            }
+
+            const sanitizedName = SecurityUtils.sanitizeInput(fullName);
+
             const { data: newProfile } = await supabase
               .from('profiles')
               .insert({
                 id: session.user.id,
-                full_name: fullName,
+                full_name: sanitizedName,
                 role: 'tenant',
               })
               .select()
@@ -123,20 +142,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: 'owner' | 'tenant') => {
+    // Validation des entrées
+    const emailValidation = SecurityUtils.validateEmail(email);
+    const passwordValidation = SecurityUtils.validatePassword(password);
+    const nameValidation = SecurityUtils.validateFullName(fullName);
+
+    if (!emailValidation.isValid || !passwordValidation.isValid || !nameValidation.isValid) {
+      const allErrors = [
+        ...emailValidation.errors,
+        ...passwordValidation.errors,
+        ...nameValidation.errors
+      ];
+      throw new Error(`Erreurs de validation: ${allErrors.join(', ')}`);
+    }
+
+    // Rate limiting
+    const rateLimitKey = `signup_${email}`;
+    if (!SecurityUtils.checkRateLimit(rateLimitKey, 3, 60 * 60 * 1000)) { // 3 tentatives par heure
+      throw new Error('Trop de tentatives d\'inscription. Veuillez réessayer dans 1 heure.');
+    }
+
+    // Nettoyage des entrées
+    const sanitizedEmail = SecurityUtils.sanitizeInput(email.toLowerCase());
+    const sanitizedName = SecurityUtils.sanitizeInput(fullName);
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: sanitizedEmail,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: sanitizedName,
           role: role,
         },
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      SecurityMiddleware.logSecurityEvent('SIGNUP_FAILED', { email: sanitizedEmail, error: error.message });
+      throw error;
+    }
 
     if (data.user) {
+      SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
       // L'utilisateur doit confirmer son email avant de pouvoir se connecter
       // Le profil sera créé automatiquement via le trigger après confirmation
       console.log('Utilisateur créé, en attente de confirmation email');
@@ -144,20 +191,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
+    // Validation des entrées
+    const emailValidation = SecurityUtils.validateEmail(email);
+    if (!emailValidation.isValid) {
+      throw new Error(`Email invalide: ${emailValidation.errors.join(', ')}`);
+    }
+
+    // Rate limiting
+    const rateLimitKey = `signin_${email}`;
+    if (!SecurityUtils.checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000)) { // 5 tentatives par 15 minutes
+      throw new Error('Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.');
+    }
+
+    // Nettoyage des entrées
+    const sanitizedEmail = SecurityUtils.sanitizeInput(email.toLowerCase());
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: sanitizedEmail,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      SecurityMiddleware.logSecurityEvent('SIGNIN_FAILED', { email: sanitizedEmail, error: error.message });
+      throw error;
+    }
 
     if (data.user) {
+      SecurityMiddleware.logSecurityEvent('SIGNIN_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
       const profileData = await fetchProfile(data.user.id);
       setProfile(profileData);
     }
   };
 
   const signOut = async () => {
+    if (user) {
+      SecurityMiddleware.logSecurityEvent('SIGNOUT', { userId: user.id, email: user.email });
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setProfile(null);

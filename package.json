@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "create-admin": "node create-admin.js",
-    "check-db": "node check-database.js"
+    "check-db": "node check-database.js",
+    "security-audit": "node security-audit.js",
+    "security-check": "npm audit && npm run typecheck && npm run lint",
+    "prebuild": "npm run security-check",
+    "predeploy": "npm run security-audit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

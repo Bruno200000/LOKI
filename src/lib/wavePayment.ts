@@ -15,6 +15,9 @@ export class WavePaymentService {
   private baseUrl: string = 'https://api.wave.com/v1';
 
   constructor(apiKey: string) {
+    if (!apiKey || apiKey.startsWith('wave_sn_prod_') && apiKey.length < 20) {
+      throw new Error('Clé API Wave non configurée. Veuillez définir WAVE_API_KEY dans les variables d\'environnement.');
+    }
     this.apiKey = apiKey;
   }
 
@@ -28,6 +31,7 @@ export class WavePaymentService {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          'User-Agent': 'LOKI-Platform/1.0',
         },
         body: JSON.stringify({
           amount: paymentData.amount.toString(),
@@ -63,6 +67,7 @@ export class WavePaymentService {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          'User-Agent': 'LOKI-Platform/1.0',
         },
       });
 
@@ -129,5 +134,17 @@ export class WavePaymentService {
   }
 }
 
-// Instance du service (sera initialisée avec la vraie clé API)
-export const wavePaymentService = new WavePaymentService('wave_sn_prod_YhUNb9d...i4bA6');
+// Initialisation sécurisée du service
+const getWaveApiKey = (): string => {
+  const apiKey = import.meta.env.VITE_WAVE_API_KEY;
+
+  if (!apiKey) {
+    console.error('❌ Clé API Wave manquante. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    throw new Error('Configuration de paiement manquante');
+  }
+
+  return apiKey;
+};
+
+// Instance du service (sera initialisée avec la vraie clé API depuis les variables d'environnement)
+export const wavePaymentService = new WavePaymentService(getWaveApiKey());
