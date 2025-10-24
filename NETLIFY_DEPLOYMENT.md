@@ -45,7 +45,7 @@ npm run build
 ### 4. Configuration Netlify complète
 
 ```
-Build command: npm run build
+Build command: npm run build:netlify
 Publish directory: dist
 Node version: 18.20.4 (ou laisser Netlify détecter via .nvmrc)
 

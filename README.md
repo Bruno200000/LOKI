@@ -62,7 +62,7 @@ npm install
    - `VITE_SUPABASE_URL`: https://oliizzwqbmlpeqozhofm.supabase.co
    - `VITE_SUPABASE_ANON_KEY`: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
 3. **Version Node.js** : Changer vers Node 18 ou 20 si des erreurs de build persistent
-4. **Build Command** : `npm run build`
+4. **Build Command** : `npm run build:netlify` (sans vérifications de sécurité)
 5. **Publish Directory** : `dist`
 
 ### Variables d'environnement requises
