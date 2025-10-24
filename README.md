@@ -53,6 +53,56 @@ npm install
    - Copiez le contenu de `supabase/migrations/001_create_loki_schema.sql`
    - Exécutez la migration
 
+## 🚀 Déploiement
+
+### Netlify
+
+1. **Connecter le repository** à Netlify
+2. **Configuration des variables d'environnement** (obligatoire) :
+   - `VITE_SUPABASE_URL`: https://oliizzwqbmlpeqozhofm.supabase.co
+   - `VITE_SUPABASE_ANON_KEY`: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
+3. **Version Node.js** : Changer vers Node 18 ou 20 si des erreurs de build persistent
+4. **Build Command** : `npm run build`
+5. **Publish Directory** : `dist`
+
+### Variables d'environnement requises
+
+Créez un fichier `.env` pour le développement local (copiez depuis `.env.example`) :
+
+```bash
+cp .env.example .env
+```
+
+### Résolution des problèmes de déploiement
+
+#### Erreur de conflit de dépendances (ERESOLVE)
+- Le projet utilise Vite 5.4.21 (compatible avec @vitejs/plugin-react)
+- Si vous voyez une erreur ERESOLVE, vérifiez que les versions sont correctes dans package.json
+
+#### Erreur de variables d'environnement vides
+- Vérifiez dans Netlify Dashboard > Site Settings > Build & Deploy > Environment Variables
+- Assurez-vous que les valeurs ne sont pas vides
+- Les variables sont utilisées pendant le build, pas seulement à l'exécution
+
+#### Erreur de version Node.js
+- Ajoutez un fichier `.nvmrc` avec `18` ou `20`
+- Ou configurez dans Netlify : Site Settings > Build & Deploy > Node version
+
+### Build Local
+
+Pour tester le build local avec les mêmes conditions que Netlify :
+
+```bash
+# Nettoyer et réinstaller
+rm -rf node_modules package-lock.json
+npm install
+
+# Build avec variables d'environnement
+VITE_SUPABASE_URL=https://oliizzwqbmlpeqozhofm.supabase.co \
+VITE_SUPABASE_ANON_KEY=your_anon_key_here \
+npm run build
+```
+
 ## 🎯 Utilisation
 
 ### Démarrer le serveur de développement
