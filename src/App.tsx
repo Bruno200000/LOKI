@@ -5,8 +5,9 @@ import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
 import { DemoPage } from './components/DemoPage';
 import { PropertyDetailsModal } from './components/tenant/PropertyDetailsModal';
-import { BookingForm } from './components/tenant/BookingForm';
 import { PaymentPage } from './components/tenant/PaymentPage';
+import { BookingForm } from './components/tenant/BookingForm';
+import { PaymentSuccess } from './components/payments/PaymentSuccess';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { OwnerDashboard } from './components/owner/OwnerDashboard';
@@ -226,6 +227,11 @@ function AppContent() {
   if (bookingMatch) {
     const houseId = bookingMatch[1];
     return <BookingFormPage houseId={houseId} />;
+  }
+
+  // Handle payment success page
+  if (currentPath === '/payment/success') {
+    return <PaymentSuccess />;
   }
 
   // Handle payment page

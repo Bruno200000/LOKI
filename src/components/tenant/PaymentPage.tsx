@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, Booking } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, CreditCard, CheckCircle, X, Loader } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, X, Loader, ArrowRight } from 'lucide-react';
 
 interface PaymentPageProps {
   bookingId: string;
@@ -40,7 +40,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
   const handlePaymentClick = () => {
     if (!user || !booking) return;
 
-    // Rediriger directement vers le lien de paiement Wave
+    // Rediriger vers le lien de paiement Wave
     const wavePaymentUrl = 'https://pay.wave.com/m/M_ci_YbMv_7m4fP66/c/ci/?amount=1000';
     window.location.href = wavePaymentUrl;
   };
@@ -180,9 +180,26 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
                   <p className="text-sm text-slate-500 mt-3">
                     Cette commission confirme votre réservation. Le premier mois de loyer sera payé directement au propriétaire.
                   </p>
-                  <p className="text-sm text-blue-600 mt-2 font-medium">
-                    💳 Vous serez redirigé vers Wave Mobile Money pour finaliser le paiement de 1 000 FCFA
-                  </p>
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-blue-600">💡</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-800 mb-1">Instructions de paiement</p>
+                        <p className="text-sm text-blue-700">
+                          Après avoir effectué le paiement sur Wave, revenez à cette page pour voir le résumé de votre réservation et les coordonnées du propriétaire.
+                        </p>
+                        <a
+                          href={`/payment/success?booking_id=${bookingId}&amount=1000&status=success`}
+                          className="inline-flex items-center gap-2 mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                          J'ai terminé le paiement - Voir le résumé
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
