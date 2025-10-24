@@ -35,6 +35,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
+    if (!wavePaymentService) {
+      setError('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+      setPaymentStatus('error');
+      onPaymentError?.('Service de paiement non configuré');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setPaymentStatus('processing');

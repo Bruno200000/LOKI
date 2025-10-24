@@ -34,6 +34,52 @@ export const HouseBrowser: React.FC = () => {
       if (error) throw error;
       setHouses(data || []);
       setFilteredHouses(data || []);
+
+      // Debug temporaire: log des données vidéo
+      console.log('=== DEBUG: Données reçues ===');
+      console.log('Total des propriétés:', data?.length || 0);
+
+      if (data && data.length > 0) {
+        console.log('🔍 Analyse détaillée de chaque propriété:');
+        data.forEach((house, index) => {
+          console.log(`\n📄 Propriété ${index + 1}: ${house.title} (ID: ${house.id})`);
+          console.log(`   Status: ${house.status}`);
+          console.log(`   video_url: "${house.video_url}" ${house.video_url ? '(✅ présent)' : '(❌ null/undefined)'}`);
+          console.log(`   videos: ${house.videos} ${house.videos ? `(array de ${house.videos.length} éléments)` : '(❌ null/undefined)'}`);
+          console.log(`   image_url: "${house.image_url}" ${house.image_url ? '(✅ présent)' : '(❌ null/undefined)'}`);
+
+          if (house.videos) {
+            console.log(`   Contenu de videos[]:`);
+            house.videos.forEach((video: string, vIndex: number) => {
+              console.log(`     [${vIndex}]: "${video}" ${video.startsWith('http') ? '✅ URL valide' : '❌ URL invalide'}`);
+            });
+          } else if (house.videos === null) {
+            console.log(`   videos: null`);
+          } else {
+            console.log(`   videos: undefined`);
+          }
+        });
+      }
+
+      const housesWithVideos = data?.filter(house =>
+        house.video_url ||
+        (house.videos !== undefined && house.videos !== null && house.videos.length > 0)
+      ) || [];
+      console.log(`🎥 Propriétés avec vidéos détectées: ${housesWithVideos.length}`);
+
+      if (housesWithVideos.length === 0) {
+        console.log('❌🚨 AUCUNE VIDÉO TROUVÉE DANS LA BASE DE DONNÉES!');
+        console.log('💡 Vérifiez que:');
+        console.log('   - Les propriétés ont des URLs de vidéos dans la colonne video_url');
+        console.log('   - OU des tableaux de vidéos dans la colonne videos');
+        console.log('   - Les URLs commencent par http:// ou https://');
+      } else {
+        console.log('✅ VIDÉOS TROUVÉES! Mais il peut y avoir des problèmes d\'accès:');
+        console.log('   - Les URLs pointent vers Supabase Storage');
+        console.log('   - Vérifiez que les fichiers existent dans le bucket house-media');
+        console.log('   - Vérifiez les politiques de sécurité (RLS) pour l\'accès public');
+        console.log('   - Testez l\'accessibilité des URLs dans le navigateur');
+      }
     } catch (error) {
       console.error('Error fetching houses:', error);
     } finally {
@@ -196,27 +242,74 @@ export const HouseBrowser: React.FC = () => {
               className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition group"
             >
               <div className="aspect-video bg-slate-200 relative overflow-hidden">
-                {house.video_url ? (
-                  <video
-                    src={house.video_url}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                ) : house.image_url ? (
-                  <img
-                    src={house.image_url}
-                    alt={house.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <HomeIcon className="w-12 h-12 text-slate-400" />
-                  </div>
-                )}
+                {(() => {
+                  // Priorité: video_url d'abord, puis videos[] si video_url n'existe pas
+                  // Gérer le cas où house.videos est undefined (au lieu d'un tableau vide)
+                  const videosToShow = house.video_url
+                    ? [house.video_url]
+                    : ((house.videos !== undefined && house.videos !== null && house.videos.length > 0) ? house.videos : []);
+                  const mainVideo = videosToShow.length > 0 ? videosToShow[0] : null;
+
+                  if (mainVideo) {
+                    return (
+                      <video
+                        src={mainVideo}
+                        controls
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        onError={(e) => {
+                          console.error('Erreur de chargement vidéo:', mainVideo, e);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    );
+                  } else if (house.image_url) {
+                    return (
+                      <img
+                        src={house.image_url}
+                        alt={house.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    );
+                  } else {
+                    return (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <HomeIcon className="w-12 h-12 text-slate-400" />
+                      </div>
+                    );
+                  }
+                })()}
                 <div className="absolute top-3 right-3">
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                     Disponible
                   </span>
                 </div>
+                {/* Badge pour les vidéos */}
+                {(() => {
+                  // Priorité: video_url d'abord, puis videos[] si video_url n'existe pas
+                  // Gérer le cas où house.videos est undefined (au lieu d'un tableau vide)
+                  const videosToShow = house.video_url
+                    ? [house.video_url]
+                    : ((house.videos !== undefined && house.videos !== null && house.videos.length > 0) ? house.videos : []);
+
+                  if (videosToShow.length > 0) {
+                    return (
+                      <div className="absolute top-3 left-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          videosToShow.length > 1
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {videosToShow.length > 1 ? `VIDEO (${videosToShow.length})` : 'VIDEO'}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition duration-300"></div>
               </div>
 

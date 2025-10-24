@@ -21,6 +21,11 @@ export const usePayment = () => {
       return null;
     }
 
+    if (!wavePaymentService) {
+      setError('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+      return null;
+    }
+
     setLoading(true);
     setError('');
 
@@ -62,6 +67,10 @@ export const usePayment = () => {
   };
 
   const checkPaymentStatus = async (sessionId: string) => {
+    if (!wavePaymentService) {
+      throw new Error('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    }
+
     try {
       return await wavePaymentService.checkPaymentStatus(sessionId);
     } catch (err: any) {

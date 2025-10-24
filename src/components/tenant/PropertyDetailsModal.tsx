@@ -91,24 +91,105 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
           <div className="p-4 sm:p-6">
             <div className="mb-6 sm:mb-8">
               <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden mb-4">
-                {house.video_url ? (
-                  <video
-                    src={house.video_url}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
-                ) : house.image_url ? (
-                  <img
-                    src={house.image_url}
-                    alt={house.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <HomeIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" />
-                  </div>
-                )}
+                {/* Afficher la vidéo principale ou la première vidéo du tableau */}
+                {(() => {
+                  // Priorité: video_url d'abord, puis videos[] si video_url n'existe pas
+                  // Gérer le cas où house.videos est undefined (au lieu d'un tableau vide)
+                  const videosToShow = house.video_url
+                    ? [house.video_url]
+                    : ((house.videos !== undefined && house.videos !== null && house.videos.length > 0) ? house.videos : []);
+                  const mainVideo = videosToShow.length > 0 ? videosToShow[0] : null;
+
+                  if (mainVideo) {
+                    return (
+                      <video
+                        src={mainVideo}
+                        controls
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Erreur de chargement vidéo:', mainVideo, e);
+                          e.currentTarget.style.display = 'none';
+                          if (house.image_url) {
+                            const imgFallback = document.createElement('img');
+                            imgFallback.src = house.image_url;
+                            imgFallback.alt = house.title;
+                            imgFallback.className = 'w-full h-full object-cover';
+                            e.currentTarget.parentNode?.appendChild(imgFallback);
+                          }
+                        }}
+                        onLoadStart={() => {
+                          console.log('Chargement de la vidéo:', mainVideo);
+                        }}
+                      >
+                        Votre navigateur ne supporte pas la lecture de vidéos.
+                      </video>
+                    );
+                  } else if (house.image_url) {
+                    return (
+                      <img
+                        src={house.image_url}
+                        alt={house.title}
+                        className="w-full h-full object-cover"
+                      />
+                    );
+                  } else {
+                    return (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <HomeIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" />
+                      </div>
+                    );
+                  }
+                })()}
               </div>
+
+              {/* Afficher les vidéos supplémentaires si disponibles */}
+              {(() => {
+                // Priorité: video_url d'abord, puis videos[] si video_url n'existe pas
+                // Gérer le cas où house.videos est undefined (au lieu d'un tableau vide)
+                const videosToShow = house.video_url
+                  ? [house.video_url]
+                  : ((house.videos !== undefined && house.videos !== null && house.videos.length > 0) ? house.videos : []);
+
+                // N'afficher les vidéos supplémentaires que s'il y en a plus d'une
+                if (videosToShow.length > 1) {
+                  return (
+                    <div className="mb-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                        Vidéos de la propriété ({videosToShow.length})
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {videosToShow.slice(1).map((videoUrl, index) => (
+                          <div key={index + 1} className="aspect-video bg-slate-200 rounded-lg overflow-hidden">
+                            <video
+                              src={videoUrl}
+                              controls
+                              muted
+                              autoPlay
+                              loop
+                              playsInline
+                              preload="metadata"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Erreur de chargement vidéo:', videoUrl, e);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            >
+                              Votre navigateur ne supporte pas la lecture de vidéos.
+                            </video>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {house.photos && house.photos.length > 0 && (
                 <div className="mb-4">

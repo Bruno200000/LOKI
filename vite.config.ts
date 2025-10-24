@@ -12,6 +12,7 @@ export default defineConfig({
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; media-src 'self' https: https://*.supabase.co https://www.youtube.com https://*.googlevideo.com; frame-src 'self' https://www.youtube.com https://youtube.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.wave.com https://www.youtube.com https://youtube.com https://s.ytimg.com https://www.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self';",
     },
 
     // Configuration HTTPS en développement (optionnel)

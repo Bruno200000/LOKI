@@ -16,7 +16,7 @@ export class WavePaymentService {
 
   constructor(apiKey: string) {
     if (!apiKey || apiKey.startsWith('wave_sn_prod_') && apiKey.length < 20) {
-      throw new Error('Clé API Wave non configurée. Veuillez définir WAVE_API_KEY dans les variables d\'environnement.');
+      throw new Error('Clé API Wave non configurée. Veuillez définir VITE_WAVE_API_KEY dans les variables d\'environnement.');
     }
     this.apiKey = apiKey;
   }
@@ -25,6 +25,10 @@ export class WavePaymentService {
    * Crée une session de paiement Wave
    */
   async createCheckoutSession(paymentData: WavePaymentData): Promise<{ session_url: string; session_id: string }> {
+    if (!this.apiKey) {
+      throw new Error('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/checkout/sessions`, {
         method: 'POST',
@@ -61,6 +65,10 @@ export class WavePaymentService {
    * Vérifie le statut d'un paiement
    */
   async checkPaymentStatus(sessionId: string): Promise<any> {
+    if (!this.apiKey) {
+      throw new Error('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/checkout/sessions/${sessionId}`, {
         method: 'GET',
@@ -93,6 +101,10 @@ export class WavePaymentService {
     description: string;
     status: 'pending' | 'completed' | 'failed' | 'cancelled';
   }): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    }
+
     try {
       const { error } = await supabase
         .from('payments')
@@ -115,6 +127,10 @@ export class WavePaymentService {
    * Met à jour le statut d'un paiement
    */
   async updatePaymentStatus(waveSessionId: string, status: string): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error('Service de paiement non configuré. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    }
+
     try {
       const { error } = await supabase
         .from('payments')
@@ -140,6 +156,7 @@ const getWaveApiKey = (): string => {
 
   if (!apiKey) {
     console.error('❌ Clé API Wave manquante. Veuillez configurer VITE_WAVE_API_KEY dans votre fichier .env');
+    console.warn('⚠️  AVERTISSEMENT SÉCURITÉ: L\'utilisation d\'une clé API côté client expose vos credentials. Considérez utiliser Supabase Edge Functions pour une intégration plus sécurisée.');
     throw new Error('Configuration de paiement manquante');
   }
 
@@ -147,4 +164,11 @@ const getWaveApiKey = (): string => {
 };
 
 // Instance du service (sera initialisée avec la vraie clé API depuis les variables d'environnement)
-export const wavePaymentService = new WavePaymentService(getWaveApiKey());
+export const wavePaymentService = (() => {
+  try {
+    return new WavePaymentService(getWaveApiKey());
+  } catch (error) {
+    console.error('Impossible d\'initialiser le service de paiement Wave:', error);
+    return null;
+  }
+})();

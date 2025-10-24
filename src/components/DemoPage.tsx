@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Volume2, Maximize, ArrowLeft } from 'lucide-react';
 
 export const DemoPage: React.FC = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [autoplayEnabled, setAutoplayEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigateTo = (destination: string) => {
     switch (destination) {
       case 'home':
@@ -25,20 +23,20 @@ export const DemoPage: React.FC = () => {
     }
   };
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-    setAutoplayEnabled(!isPlaying);
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
   const toggleFullscreen = () => {
+    // Utiliser le mode plein écran natif de l'iframe
     const iframe = document.querySelector('iframe');
     if (iframe) {
       if (iframe.requestFullscreen) {
         iframe.requestFullscreen();
+      } else if ((iframe as any).webkitRequestFullscreen) {
+        (iframe as any).webkitRequestFullscreen();
+      } else if ((iframe as any).mozRequestFullScreen) {
+        (iframe as any).mozRequestFullScreen();
+      } else if ((iframe as any).msRequestFullscreen) {
+        (iframe as any).msRequestFullscreen();
+      } else {
+        alert('Plein écran non supporté sur ce navigateur');
       }
     }
   };
@@ -59,6 +57,17 @@ export const DemoPage: React.FC = () => {
         break;
     }
   };
+
+  // Masquer automatiquement les contrôles après 3 secondes d'inactivité
+  useEffect(() => {
+    if (showControls && !isLoading) {
+      const timer = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showControls, isLoading]);
 
   return (
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
@@ -148,53 +157,52 @@ export const DemoPage: React.FC = () => {
               className="relative bg-black overflow-hidden aspect-video z-10"
               onMouseEnter={() => setShowControls(true)}
               onMouseLeave={() => setShowControls(false)}
+              onMouseMove={() => setShowControls(true)}
             >
               {/* YouTube Video Embed with autoplay control */}
               <iframe
-                src={`https://www.youtube.com/embed/zzmJB7gVKCQ?autoplay=${autoplayEnabled ? 1 : 0}&rel=0&modestbranding=1&showinfo=0&controls=1&mute=${isMuted ? 1 : 0}`}
+                src="https://www.youtube.com/embed/zzmJB7gVKCQ?autoplay=1&rel=0&modestbranding=1&showinfo=0&controls=1&mute=0"
                 title="LOKI Platform Demo"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+                onLoad={() => setIsLoading(false)}
               />
 
-              {/* Custom Video controls overlay - Only show when not playing */}
-              {!isPlaying && showControls && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-[50]">
-                  <button
-                    onClick={togglePlay}
-                    className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-110"
-                  >
-                    <Play className="w-10 h-10 text-white ml-1" />
-                  </button>
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-[60]">
+                  <div className="text-white text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                    <p className="text-lg font-medium">Chargement de la vidéo...</p>
+                  </div>
                 </div>
               )}
 
-              {/* Video controls overlay - Show when playing */}
-              {isPlaying && showControls && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-[60]">
+              {/* Custom Video controls overlay - Show when hovering */}
+              {showControls && !isLoading && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-[50]">
                   <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
                     <button
-                      onClick={togglePlay}
+                      onClick={() => alert('Utilisez les contrôles YouTube intégrés')}
                       className="w-12 h-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all"
+                      title="Contrôles YouTube intégrés"
                     >
-                      <Pause className="w-5 h-5 text-white" />
+                      <span className="text-white text-xs">▶️</span>
                     </button>
 
                     <button
-                      onClick={toggleMute}
+                      onClick={() => alert('Utilisez les contrôles YouTube intégrés')}
                       className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all"
+                      title="Contrôles YouTube intégrés"
                     >
-                      {isMuted ? (
-                        <VolumeX className="w-4 h-4 text-white" />
-                      ) : (
-                        <Volume2 className="w-4 h-4 text-white" />
-                      )}
+                      <Volume2 className="w-4 h-4 text-white" />
                     </button>
 
                     <button
                       onClick={toggleFullscreen}
                       className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center transition-all"
+                      title="Plein écran"
                     >
                       <Maximize className="w-4 h-4 text-white" />
                     </button>
