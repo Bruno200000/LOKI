@@ -11,6 +11,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   const [recentHouses, setRecentHouses] = useState<House[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   const handleGetStarted = () => {
     // Rediriger directement vers la page de connexion en forçant l'état d'authentification
@@ -397,21 +398,72 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                   key={house.id}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group"
                   style={{animationDelay: `${index * 0.1}s`}}
+                  onMouseEnter={() => setHoveredCard(house.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 >
                   <div className="relative overflow-hidden">
-                    <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                      {house.image_url ? (
-                        <img
-                          src={house.image_url}
-                          alt={house.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="text-slate-400">
-                          <Home className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm">Aucune image</p>
-                        </div>
-                      )}
+                    <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
+                      {(() => {
+                        // Logique pour détecter les vidéos disponibles (priorité: video_url puis videos[])
+                        const getVideoSrc = () => {
+                          if (house.video_url) return house.video_url;
+                          if (house.videos !== undefined && house.videos !== null && house.videos.length > 0) return house.videos[0];
+                          return null;
+                        };
+
+                        // Logique d'affichage d'image
+                        const getImageSrc = () => {
+                          if (house.image_url) return house.image_url;
+                          if (house.photos && house.photos.length > 0) return house.photos[0];
+                          return null;
+                        };
+
+                        const videoSrc = getVideoSrc();
+                        const imageSrc = getImageSrc();
+                        const isHovered = hoveredCard === house.id;
+
+                        // Si la carte est survolée et qu'il y a une vidéo, afficher la vidéo
+                        if (isHovered && videoSrc) {
+                          return (
+                            <video
+                              src={videoSrc}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full h-full object-cover absolute inset-0 transition-opacity duration-300"
+                              onError={(e) => {
+                                console.error('Erreur de chargement vidéo:', videoSrc);
+                                e.currentTarget.style.display = 'none';
+                                // Remettre l'image en cas d'erreur
+                                setHoveredCard(null);
+                              }}
+                            />
+                          );
+                        }
+
+                        // Sinon, afficher l'image
+                        if (imageSrc) {
+                          return (
+                            <img
+                              src={imageSrc}
+                              alt={house.title}
+                              className={`w-full h-full object-cover transition-all duration-500 ${isHovered ? 'scale-110 opacity-90' : 'group-hover:scale-110'}`}
+                              onError={(e) => {
+                                console.error('Erreur de chargement image:', imageSrc);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          );
+                        } else {
+                          return (
+                            <div className="text-slate-400">
+                              <Home className="h-12 w-12 mx-auto mb-2" />
+                              <p className="text-sm">Aucune image</p>
+                            </div>
+                          );
+                        }
+                      })()}
                     </div>
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-ci-orange-600">
                       {house.price.toLocaleString()} FCFA/mois
@@ -419,6 +471,23 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                     <div className="absolute top-3 left-3 bg-gradient-to-r from-ci-green-500 to-ci-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
                       Disponible
                     </div>
+                    {/* Badge vidéo si disponible et pas survolé */}
+                    {(() => {
+                      const getVideoSrc = () => {
+                        if (house.video_url) return house.video_url;
+                        if (house.videos !== undefined && house.videos !== null && house.videos.length > 0) return house.videos[0];
+                        return null;
+                      };
+                      const videoSrc = getVideoSrc();
+                      if (videoSrc && hoveredCard !== house.id) {
+                        return (
+                          <div className="absolute top-12 left-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                            VIDÉO
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <div className="p-4 lg:p-6">
@@ -629,15 +698,34 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                         onClick={() => window.location.href = `/property/${house.id}`}
                       >
                         <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl mr-3 lg:mr-4 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                          {house.image_url ? (
-                            <img
-                              src={house.image_url}
-                              alt={house.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Home className="h-6 w-6 lg:h-8 lg:w-8 text-slate-400" />
-                          )}
+                          {(() => {
+                            // Logique d'affichage d'image similaire à HouseBrowser
+                            const getImageSrc = () => {
+                              if (house.image_url) return house.image_url;
+                              if (house.photos && house.photos.length > 0) return house.photos[0];
+                              return null;
+                            };
+
+                            const imageSrc = getImageSrc();
+
+                            if (imageSrc) {
+                              return (
+                                <img
+                                  src={imageSrc}
+                                  alt={house.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error('Erreur de chargement image:', imageSrc);
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              );
+                            } else {
+                              return (
+                                <Home className="h-6 w-6 lg:h-8 lg:w-8 text-slate-400" />
+                              );
+                            }
+                          })()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors text-base lg:text-lg line-clamp-1">
