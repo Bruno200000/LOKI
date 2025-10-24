@@ -65,6 +65,8 @@ npm install
 4. **Build Command** : `npm run build:netlify` (sans vérifications de sécurité)
 5. **Publish Directory** : `dist`
 
+**Note** : Le fichier `netlify.toml` configure automatiquement ces paramètres.
+
 ### Variables d'environnement requises
 
 Créez un fichier `.env` pour le développement local (copiez depuis `.env.example`) :
