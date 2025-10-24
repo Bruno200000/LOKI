@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase, Booking } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, CreditCard, CheckCircle, X, Loader } from 'lucide-react';
-import { PaymentModal } from '../payments/PaymentModal';
 
 interface PaymentPageProps {
   bookingId: string;
@@ -14,7 +13,6 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -42,50 +40,13 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
   const handlePaymentClick = () => {
     if (!user || !booking) return;
 
-    setPaymentStatus('processing');
-    setPaymentModalOpen(true);
-  };
-
-  const handlePaymentSuccess = async (sessionId: string) => {
-    console.log('Paiement réussi:', sessionId);
-    setPaymentStatus('success');
-    setPaymentModalOpen(false);
-
-    // Update booking status to confirmed after successful payment
-    try {
-      await supabase
-        .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', bookingId);
-
-      // Create payment record
-      if (user) {
-        await supabase
-          .from('payments')
-          .insert({
-            booking_id: parseInt(bookingId),
-            amount: 1000,
-            payment_type: 'commission',
-            payment_method: 'pending',
-            status: 'completed',
-            paid_by: user.id,
-            completed_at: new Date().toISOString()
-          });
-      }
-    } catch (error) {
-      console.error('Error updating booking after payment:', error);
-    }
-  };
-
-  const handlePaymentError = (error: string) => {
-    console.error('Erreur de paiement:', error);
-    setPaymentStatus('error');
-    setPaymentModalOpen(false);
+    // Rediriger directement vers le lien de paiement Wave
+    const wavePaymentUrl = 'https://pay.wave.com/m/M_ci_YbMv_7m4fP66/c/ci/?amount=1000';
+    window.location.href = wavePaymentUrl;
   };
 
   const handleRetry = () => {
     setPaymentStatus('idle');
-    setPaymentModalOpen(false);
   };
 
   if (loading) {
@@ -137,7 +98,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
         return (
           <>
             <CreditCard className="w-5 h-5" />
-            Payer la commission (1 000 FCFA)
+            Payer avec Wave (1 000 FCFA)
           </>
         );
     }
@@ -219,6 +180,9 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
                   <p className="text-sm text-slate-500 mt-3">
                     Cette commission confirme votre réservation. Le premier mois de loyer sera payé directement au propriétaire.
                   </p>
+                  <p className="text-sm text-blue-600 mt-2 font-medium">
+                    💳 Vous serez redirigé vers Wave Mobile Money pour finaliser le paiement de 1 000 FCFA
+                  </p>
                 </div>
               </div>
 
@@ -267,18 +231,6 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ bookingId, onBack }) =
           </div>
         </div>
       </div>
-
-      {paymentModalOpen && (
-        <PaymentModal
-          isOpen={true}
-          onClose={() => setPaymentModalOpen(false)}
-          amount={1000}
-          currency="XOF"
-          description={`Commission pour réservation ${booking.id}`}
-          onPaymentSuccess={handlePaymentSuccess}
-          onPaymentError={handlePaymentError}
-        />
-      )}
     </>
   );
 };
