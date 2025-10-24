@@ -49,6 +49,13 @@ Build command: npm run build:netlify
 Publish directory: dist
 Node version: 18.20.4 (ou laisser Netlify détecter via .nvmrc)
 
+**Configuration Netlify.toml** :
+Le fichier netlify.toml configure automatiquement :
+- Build command : npm run build:netlify
+- Publish directory : dist  
+- Node version : 18
+- SPA redirects pour le routing client-side
+
 Environment Variables:
 - VITE_SUPABASE_URL: https://oliizzwqbmlpeqozhofm.supabase.co
 - VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
