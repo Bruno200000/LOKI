@@ -61,9 +61,22 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   }, [selectedCategory, searchNeighborhood, maxPrice, houses]);
 
   useEffect(() => {
-    // Extraire les quartiers uniques des maisons
-    const uniqueNeighborhoods = [...new Set(houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood)))];
-    setNeighborhoods(uniqueNeighborhoods);
+    // Liste prédéfinie des quartiers disponibles
+    const predefinedNeighborhoods = [
+      'Aéroport', 'Ahougnanssou', 'Air France 1', 'Air France 2', 'Air France 3',
+      'Allokokro', 'Attienkro', 'Beaufort', 'Belleville 1', 'Belleville 2',
+      'Broukro 1', 'Broukro 2', 'Camp Militaire', 'Commerce', 'Dar-es-Salam 1',
+      'Dar-es-Salam 2', 'Dar-es-Salam 3', 'Dougouba', 'Gonfreville', 'Houphouët-Ville',
+      'IDESSA', 'Kamounoukro', 'Kanakro', 'Kennedy', 'Koko', 'Kodiakoffikro',
+      'Konankankro', 'Liberté', 'Lycée Municipal', 'Mamianou', 'N\'Dakro',
+      'N\'Gattakro', 'N\'Gouatanoukro', 'Niankoukro', 'Nimbo', 'Sokoura',
+      'Tièrèkro', 'Tolla Kouadiokro', 'Zone Industrielle'
+    ];
+    
+    // Extraire les quartiers uniques des maisons et combiner avec la liste prédéfinie
+    const houseNeighborhoods = houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood));
+    const allNeighborhoods = [...new Set([...predefinedNeighborhoods, ...houseNeighborhoods])].sort();
+    setNeighborhoods(allNeighborhoods);
   }, [houses]);
 
   const getPriceDisplay = (house: House) => {
