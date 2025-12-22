@@ -57,6 +57,8 @@ interface ChartData {
   color: string;
 }
 
+
+
 export const AdminDashboard: React.FC = () => {
   const { profile, user, signOut } = useAuth();
   const [stats, setStats] = useState<Stats>({
@@ -75,6 +77,7 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'analytics'>('overview');
   const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     fetchStats();
@@ -383,6 +386,17 @@ export const AdminDashboard: React.FC = () => {
             >
               <Calendar className="w-4 h-4 inline mr-2" />
               Réservations ({bookings.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'analytics'
+                  ? 'border-ci-orange-600 text-ci-orange-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 inline mr-2" />
+              Analytique
             </button>
           </nav>
         </div>
@@ -796,7 +810,41 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'analytics' && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Répartition des Utilisateurs</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Répartition des Utilisateurs</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAnalyticsPeriod('week')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      analyticsPeriod === 'week'
+                        ? 'bg-ci-orange-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Semaine
+                  </button>
+                  <button
+                    onClick={() => setAnalyticsPeriod('month')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      analyticsPeriod === 'month'
+                        ? 'bg-ci-orange-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Mois
+                  </button>
+                  <button
+                    onClick={() => setAnalyticsPeriod('year')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      analyticsPeriod === 'year'
+                        ? 'bg-ci-orange-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Année
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <div className="space-y-4">
@@ -849,7 +897,9 @@ export const AdminDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Statistiques Générales</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                  Statistiques {analyticsPeriod === 'week' ? 'hebdomadaires' : analyticsPeriod === 'month' ? 'mensuelles' : 'annuelles'}
+                </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-600">Taux d'occupation</span>
@@ -858,8 +908,12 @@ export const AdminDashboard: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Réservations par mois</span>
-                    <span className="text-sm font-semibold">{Math.round(stats.totalBookings / 12)}</span>
+                    <span className="text-sm text-slate-600">
+                      Réservations {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
+                    </span>
+                    <span className="text-sm font-semibold">
+                      {analyticsPeriod === 'week' ? Math.round(stats.totalBookings / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalBookings / 12) : stats.totalBookings}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-slate-600">Commission moyenne</span>
@@ -871,19 +925,33 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Activité Récente</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                  Activité {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
+                </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Nouveaux utilisateurs (7j)</span>
-                    <span className="text-sm font-semibold text-green-600">+{users.slice(0, 7).length}</span>
+                    <span className="text-sm text-slate-600">
+                      Nouveaux utilisateurs ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                    </span>
+                    <span className="text-sm font-semibold text-green-600">
+                      +{analyticsPeriod === 'week' ? users.slice(0, 7).length : analyticsPeriod === 'month' ? users.slice(0, 30).length : users.length}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Nouvelles maisons (7j)</span>
-                    <span className="text-sm font-semibold text-blue-600">+{stats.totalHouses}</span>
+                    <span className="text-sm text-slate-600">
+                      Nouvelles maisons ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                    </span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      +{analyticsPeriod === 'week' ? Math.round(stats.totalHouses / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalHouses / 12) : stats.totalHouses}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Transactions (7j)</span>
-                    <span className="text-sm font-semibold text-purple-600">+{transactions.length}</span>
+                    <span className="text-sm text-slate-600">
+                      Transactions ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                    </span>
+                    <span className="text-sm font-semibold text-purple-600">
+                      +{analyticsPeriod === 'week' ? Math.round(transactions.length / 4) : analyticsPeriod === 'month' ? Math.round(transactions.length / 12) : transactions.length}
+                    </span>
                   </div>
                 </div>
               </div>
