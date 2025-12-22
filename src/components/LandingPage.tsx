@@ -14,6 +14,9 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'house' | 'residence' | 'land' | 'shop'>('all');
   const [filteredHouses, setFilteredHouses] = useState<House[]>([]);
+  const [searchNeighborhood, setSearchNeighborhood] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
 
   const handleGetStarted = () => {
     // Rediriger directement vers la page de connexion en forçant l'état d'authentification
@@ -32,6 +35,49 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
       setFilteredHouses(houses.filter(house => house.type === selectedCategory));
     }
   }, [selectedCategory, houses]);
+
+  useEffect(() => {
+    let filtered = houses;
+    
+    // Filtrer par catégorie
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(house => house.type === selectedCategory);
+    }
+    
+    // Filtrer par quartier
+    if (searchNeighborhood) {
+      filtered = filtered.filter(house => 
+        house.neighborhood && house.neighborhood.toLowerCase().includes(searchNeighborhood.toLowerCase())
+      );
+    }
+    
+    // Filtrer par prix maximum
+    if (maxPrice) {
+      const maxPriceNum = parseFloat(maxPrice);
+      filtered = filtered.filter(house => house.price <= maxPriceNum);
+    }
+    
+    setFilteredHouses(filtered);
+  }, [selectedCategory, searchNeighborhood, maxPrice, houses]);
+
+  useEffect(() => {
+    // Extraire les quartiers uniques des maisons
+    const uniqueNeighborhoods = [...new Set(houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood)))];
+    setNeighborhoods(uniqueNeighborhoods);
+  }, [houses]);
+
+  const getPriceDisplay = (house: House) => {
+    switch (house.type) {
+      case 'residence':
+        return `${house.price.toLocaleString()} FCFA/nuit`;
+      case 'land':
+        return `${house.price.toLocaleString()} FCFA (fixe)`;
+      case 'house':
+      case 'shop':
+      default:
+        return `${house.price.toLocaleString()} FCFA/mois`;
+    }
+  };
 
   const fetchFeaturedHouses = async () => {
     try {
@@ -382,6 +428,73 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
             </p>
           </div>
 
+          {/* Filtres de recherche */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Filtre par catégorie */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Type de bien</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as any)}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                >
+                  <option value="all">Tous les types</option>
+                  <option value="house">Maisons</option>
+                  <option value="residence">Résidences</option>
+                  <option value="land">Terrains</option>
+                  <option value="shop">Magasins</option>
+                </select>
+              </div>
+
+              {/* Filtre par quartier */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Quartier</label>
+                <select
+                  value={searchNeighborhood}
+                  onChange={(e) => setSearchNeighborhood(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                >
+                  <option value="">Tous les quartiers</option>
+                  {neighborhoods.map((neighborhood) => (
+                    <option key={neighborhood} value={neighborhood}>
+                      {neighborhood}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtre par prix maximum */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Prix maximum (FCFA)</label>
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Ex: 200000"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                />
+              </div>
+            </div>
+
+            {/* Bouton pour réinitialiser les filtres */}
+            {(selectedCategory !== 'all' || searchNeighborhood || maxPrice) && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setSearchNeighborhood('');
+                    setMaxPrice('');
+                  }}
+                  className="inline-flex items-center text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            )}
+          </div>
+
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
@@ -398,9 +511,9 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </div>
               ))}
             </div>
-          ) : houses.length > 0 ? (
+          ) : filteredHouses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {houses.map((house, index) => (
+              {filteredHouses.map((house, index) => (
                 <div
                   key={house.id}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group"
@@ -473,7 +586,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                       })()}
                     </div>
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-ci-orange-600">
-                      {house.price.toLocaleString()} FCFA/mois
+                      {getPriceDisplay(house)}
                     </div>
                     <div className="absolute top-3 left-3 bg-gradient-to-r from-ci-green-500 to-ci-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
                       Disponible
@@ -541,7 +654,34 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </div>
               ))}
             </div>
+          ) : houses.length > 0 ? (
+            // Message quand aucun résultat ne correspond aux filtres
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full mb-6">
+                <Search className="h-10 w-10 text-slate-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Aucun résultat trouvé</h3>
+              <p className="text-slate-600 mb-6">
+                {selectedCategory !== 'all' || searchNeighborhood || maxPrice 
+                  ? 'Essayez d\'ajuster vos filtres pour voir plus de résultats.' 
+                  : 'Revenez bientôt pour découvrir nos nouvelles offres'}
+              </p>
+              {(selectedCategory !== 'all' || searchNeighborhood || maxPrice) && (
+                <button
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setSearchNeighborhood('');
+                    setMaxPrice('');
+                  }}
+                  className="inline-flex items-center bg-gradient-to-r from-ci-orange-600 to-ci-green-600 hover:from-ci-orange-700 hover:to-ci-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300"
+                >
+                  Réinitialiser les filtres
+                  <X className="ml-2 h-4 w-4" />
+                </button>
+              )}
+            </div>
           ) : (
+            // Message quand aucune propriété n'est disponible
             <div className="text-center py-16">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full mb-6">
                 <Home className="h-10 w-10 text-slate-400" />
@@ -744,7 +884,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-lg lg:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                              {house.price.toLocaleString()} FCFA/mois
+                              {getPriceDisplay(house)}
                             </span>
                             <div className="flex items-center text-sm text-slate-500 space-x-2 lg:space-x-3">
                               <div className="flex items-center">
