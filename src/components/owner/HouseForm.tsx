@@ -132,6 +132,32 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
     return baseData;
   };
 
+  const getPriceLabel = () => {
+    switch (propertyType) {
+      case 'residence':
+        return 'Prix par nuit (FCFA) *';
+      case 'land':
+        return 'Prix fixe (FCFA) *';
+      case 'house':
+      case 'shop':
+      default:
+        return 'Prix mensuel (FCFA) *';
+    }
+  };
+
+  const getPricePlaceholder = () => {
+    switch (propertyType) {
+      case 'residence':
+        return '15000';
+      case 'land':
+        return '5000000';
+      case 'house':
+      case 'shop':
+      default:
+        return '150000';
+    }
+  };
+
   const [formData, setFormData] = useState(getDefaultFormData());
 
   // Reinitialize form when propertyType changes
@@ -501,14 +527,14 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Prix mensuel (FCFA) *
+                  {getPriceLabel()}
                 </label>
                 <input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-                  placeholder="150000"
+                  placeholder={getPricePlaceholder()}
                   required
                 />
               </div>
