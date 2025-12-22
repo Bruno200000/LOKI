@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { House } from '../../lib/supabase';
+import { House, supabase } from '../../lib/supabase';
 import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -64,18 +64,19 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
 
     setLoadingPhone(true);
     try {
-      const { data, error } = await import('../../lib/supabase').then(m => m.supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('phone')
         .eq('id', house.owner_id)
-        .single()
-      );
+        .single();
 
       if (error) throw error;
       setOwnerPhone(data?.phone || 'Non disponible');
       setShowPhone(true);
     } catch (err) {
       console.error('Error fetching owner phone:', err);
+      setOwnerPhone('Non disponible');
+      setShowPhone(true);
     } finally {
       setLoadingPhone(false);
     }

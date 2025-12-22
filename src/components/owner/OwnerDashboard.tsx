@@ -24,12 +24,12 @@ import {
   Mail,
   MapPin
 } from 'lucide-react';
-import { HouseForm } from './HouseForm';
+import { PropertyForm } from './PropertyForm';
 import { HouseDetails } from './HouseDetails';
 import { Footer } from '../Footer';
 
 export const OwnerDashboard: React.FC = () => {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refreshProfile, setProfile } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +53,14 @@ export const OwnerDashboard: React.FC = () => {
     phone: profile?.phone || '',
     address: profile?.address || ''
   });
+
+  useEffect(() => {
+    setEditProfile({
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      address: profile?.address || ''
+    });
+  }, [profile?.full_name, profile?.phone, profile?.address]);
 
   // Profile management functions
   const handleEditProfile = () => {
@@ -83,9 +91,9 @@ export const OwnerDashboard: React.FC = () => {
 
       if (error) throw error;
 
+      await refreshProfile();
+      setProfile(prev => prev ? { ...prev, ...editProfile } : prev);
       setIsEditingProfile(false);
-      // Refresh the page or update the profile state
-      window.location.reload();
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Erreur lors de la mise à jour du profil');
@@ -274,6 +282,10 @@ export const OwnerDashboard: React.FC = () => {
     fetchHouses();
   };
 
+  const handleFormSuccess = () => {
+    fetchHouses();
+  };
+
   const handleViewSite = () => {
     // Redirect to the public site (LandingPage)
     window.location.href = '/?view=public';
@@ -303,7 +315,7 @@ export const OwnerDashboard: React.FC = () => {
   };
 
   if (showHouseForm) {
-    return <HouseForm house={selectedHouse} onClose={handleFormClose} />;
+    return <PropertyForm house={selectedHouse} onClose={handleFormClose} onSuccess={handleFormSuccess} />;
   }
 
   if (viewingHouse) {

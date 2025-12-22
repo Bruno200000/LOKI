@@ -48,9 +48,11 @@ const BOUAKE_NEIGHBORHOODS = [
 interface HouseFormProps {
   house?: House | null;
   onClose: () => void;
+  onSuccess: () => void;
+  propertyType: 'residence' | 'house' | 'land' | 'shop';
 }
 
-export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element => {
+export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseFormProps): React.JSX.Element => {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -58,46 +60,92 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
   const [success, setSuccess] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    status: 'available' as 'available' | 'taken' | 'pending',
-    image_url: '',
-    video_url: '',
-    virtual_tour_url: '',
-    city: 'Bouaké',
-    neighborhood: '',
-    photos: [] as string[],
+  const getDefaultFormData = () => {
+    const baseData = {
+      // Champs de base
+      title: '',
+      description: '',
+      price: '',
+      type: propertyType,
+      status: 'available' as 'available' | 'taken' | 'pending',
+      location: '',
+      city: 'Bouaké',
+      neighborhood: '',
+      
+      // Médias
+      image_url: '',
+      video_url: '',
+      virtual_tour_url: '',
+      photos: [] as string[],
+      videos: [] as string[],
+      
+      // Caractéristiques générales
+      area_sqm: '',
+      parking: false,
+      security_cameras: false,
+      guardian: false,
+      furnished: false,
+      floor: '',
+    };
 
-    // Caractéristiques de base
-    bedrooms: '',
-    bathrooms: '',
-    area_sqm: '',
+    if (propertyType === 'residence' || propertyType === 'house') {
+      return {
+        ...baseData,
+        bedrooms: '',
+        bathrooms: '',
+        air_conditioning: false,
+        heating: false,
+        hot_water: false,
+        internet: false,
+        elevator: false,
+        balcony: false,
+        garden: false,
+        pool: false,
+        alarm_system: false,
+        interphone: false,
+      };
+    }
 
-    // Équipements
-    air_conditioning: false,
-    heating: false,
-    hot_water: false,
-    internet: false,
-    parking: false,
-    elevator: false,
-    balcony: false,
-    garden: false,
-    pool: false,
+    if (propertyType === 'land') {
+      return {
+        ...baseData,
+        land_type: 'residential' as 'residential' | 'commercial' | 'agricultural',
+        has_water: false,
+        has_electricity: false,
+        is_flat: false,
+        has_fence: false,
+      };
+    }
 
-    // Sécurité
-    security_cameras: false,
-    alarm_system: false,
-    interphone: false,
-    guardian: false
-  });
+    if (propertyType === 'shop') {
+      return {
+        ...baseData,
+        shop_type: 'retail' as 'retail' | 'restaurant' | 'office' | 'other',
+        has_toilet: false,
+        has_storage: false,
+        has_showcase: false,
+        has_ac: false,
+        has_security_system: false,
+      };
+    }
+
+    return baseData;
+  };
+
+  const [formData, setFormData] = useState(getDefaultFormData());
+
+  // Reinitialize form when propertyType changes
+  useEffect(() => {
+    setFormData(getDefaultFormData());
+  }, [propertyType]);
 
   // Initialize form data when editing
   useEffect(() => {
     if (house) {
-      setFormData({
+      const baseFormData = {
+        ...getDefaultFormData(),
         title: house.title,
+        location: house.location || '',
         description: house.description || '',
         price: house.price.toString(),
         status: house.status,
@@ -105,33 +153,57 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
         video_url: house.video_url || '',
         virtual_tour_url: house.virtual_tour_url || '',
         city: house.city || 'Bouaké',
-        neighborhood: (house as any).neighborhood || '',
+        neighborhood: house.neighborhood || '',
         photos: house.photos || [],
-
-        // Caractéristiques de base
-        bedrooms: house.bedrooms?.toString() || '',
-        bathrooms: house.bathrooms?.toString() || '',
         area_sqm: house.area_sqm?.toString() || '',
-
-        // Équipements
-        air_conditioning: house.air_conditioning || false,
-        heating: house.heating || false,
-        hot_water: house.hot_water || false,
-        internet: house.internet || false,
         parking: house.parking || false,
-        elevator: house.elevator || false,
-        balcony: house.balcony || false,
-        garden: house.garden || false,
-        pool: house.pool || false,
-
-        // Sécurité
         security_cameras: house.security_cameras || false,
-        alarm_system: house.alarm_system || false,
-        interphone: house.interphone || false,
-        guardian: house.guardian || false
-      });
+        guardian: house.guardian || false,
+      };
+
+      // Ajouter les champs spécifiques selon le type
+      if (house.type === 'residence' || house.type === 'house') {
+        setFormData({
+          ...baseFormData,
+          bedrooms: house.bedrooms?.toString() || '',
+          bathrooms: house.bathrooms?.toString() || '',
+          furnished: house.furnished || false,
+          floor: house.floor?.toString() || '',
+          air_conditioning: house.air_conditioning || false,
+          heating: house.heating || false,
+          hot_water: house.hot_water || false,
+          internet: house.internet || false,
+          elevator: house.elevator || false,
+          balcony: house.balcony || false,
+          garden: house.garden || false,
+          pool: house.pool || false,
+          alarm_system: house.alarm_system || false,
+          interphone: house.interphone || false,
+        });
+      } else if (house.type === 'land') {
+        setFormData({
+          ...baseFormData,
+          land_type: house.land_type || 'residential',
+          has_water: house.has_water || false,
+          has_electricity: house.has_electricity || false,
+          is_flat: house.is_flat || false,
+          has_fence: house.has_fence || false,
+        });
+      } else if (house.type === 'shop') {
+        setFormData({
+          ...baseFormData,
+          shop_type: house.shop_type || 'retail',
+          has_toilet: house.has_toilet || false,
+          has_storage: house.has_storage || false,
+          has_showcase: house.has_showcase || false,
+          has_ac: house.has_ac || false,
+          has_security_system: house.has_security_system || false,
+        });
+      } else {
+        setFormData(baseFormData);
+      }
     }
-  }, [house]);
+  }, [house, propertyType]);
 
   const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -244,6 +316,22 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
     setFormData({ ...formData, photos: newPhotos });
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -251,51 +339,89 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
     setLoading(true);
 
     try {
-      const houseData = {
-        owner_id: profile?.id,
+      if (!profile) throw new Error('Vous devez être connecté pour ajouter une propriété');
+
+      // Données de base communes à tous les types de propriétés
+      const baseData: Partial<House> = {
+        owner_id: profile.id,
         title: formData.title,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: parseFloat(formData.price) || 0,
         status: formData.status,
+        type: propertyType,
+        location: formData.location,
+        city: formData.city,
+        neighborhood: formData.neighborhood || null,
+        
+        // Médias
         image_url: formData.image_url || null,
         video_url: formData.video_url || null,
         virtual_tour_url: formData.virtual_tour_url || null,
-        city: formData.city || null,
-        neighborhood: formData.neighborhood || null,
         photos: formData.photos.length > 0 ? formData.photos : null,
-
-        // Caractéristiques de base
-        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : 1,
-        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : 1,
+        videos: formData.videos || null,
+        
+        // Caractéristiques générales
         area_sqm: formData.area_sqm ? parseFloat(formData.area_sqm) : null,
-
-        // Équipements
-        air_conditioning: formData.air_conditioning || null,
-        heating: formData.heating || null,
-        hot_water: formData.hot_water || null,
-        internet: formData.internet || null,
-        parking: formData.parking || null,
-        elevator: formData.elevator || null,
-        balcony: formData.balcony || null,
-        garden: formData.garden || null,
-        pool: formData.pool || null,
-
-        // Sécurité
-        security_cameras: formData.security_cameras || null,
-        alarm_system: formData.alarm_system || null,
-        interphone: formData.interphone || null,
-        guardian: formData.guardian || null
+        parking: formData.parking,
+        security_cameras: formData.security_cameras,
+        guardian: formData.guardian,
       };
 
+      // Ajout des champs spécifiques au type de propriété
+      let propertyData = { ...baseData };
+
+      if (propertyType === 'residence' || propertyType === 'house') {
+        propertyData = {
+          ...propertyData,
+          bedrooms: (formData as any).bedrooms ? Number((formData as any).bedrooms) : null,
+          bathrooms: (formData as any).bathrooms ? Number((formData as any).bathrooms) : null,
+          furnished: (formData as any).furnished,
+          floor: (formData as any).floor ? Number((formData as any).floor) : null,
+          air_conditioning: (formData as any).air_conditioning,
+          heating: (formData as any).heating,
+          hot_water: (formData as any).hot_water,
+          internet: (formData as any).internet,
+          elevator: (formData as any).elevator,
+          balcony: (formData as any).balcony,
+          garden: (formData as any).garden,
+          pool: (formData as any).pool,
+          alarm_system: (formData as any).alarm_system,
+          interphone: (formData as any).interphone,
+        };
+      } else if (propertyType === 'land') {
+        propertyData = {
+          ...propertyData,
+          land_type: (formData as any).land_type,
+          has_water: (formData as any).has_water,
+          has_electricity: (formData as any).has_electricity,
+          is_flat: (formData as any).is_flat,
+          has_fence: (formData as any).has_fence,
+        };
+      } else if (propertyType === 'shop') {
+        propertyData = {
+          ...propertyData,
+          shop_type: (formData as any).shop_type,
+          has_toilet: (formData as any).has_toilet,
+          has_storage: (formData as any).has_storage,
+          has_showcase: (formData as any).has_showcase,
+          has_ac: (formData as any).has_ac,
+          has_security_system: (formData as any).has_security_system,
+        };
+      }
+
       if (house) {
+        // Update existing property
         const { error } = await supabase
           .from('houses')
-          .update(houseData)
+          .update(propertyData)
           .eq('id', house.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('houses').insert([houseData]);
+        // Create new property
+        const { error } = await supabase
+          .from('houses')
+          .insert([propertyData]);
 
         if (error) throw error;
       }
@@ -303,9 +429,11 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
       setSuccess(true);
       setTimeout(() => {
         onClose();
+        onSuccess();
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
+    } catch (err) {
+      console.error('Error saving property:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setLoading(false);
     }
@@ -419,6 +547,37 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
+                Adresse complète *
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                placeholder="Ex: Rue des Jardins, près du marché"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Surface (m²) *
+              </label>
+              <input
+                type="number"
+                name="area_sqm"
+                value={formData.area_sqm}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                placeholder="120"
+                min="1"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Statut *
               </label>
               <select
@@ -504,104 +663,218 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
               </div>
             </div>
 
-            {/* Caractéristiques de base */}
-            <div className="bg-slate-50 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombre de chambres *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.bedrooms}
-                    onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-                    placeholder="2"
-                    min="1"
-                    required
-                  />
+            
+            
+            {/* Champs spécifiques aux maisons et résidences */}
+            {(propertyType === 'house' || propertyType === 'residence') && (
+              <div className="bg-slate-50 p-6 rounded-lg mb-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du logement</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Chambres</label>
+                    <input
+                      type="number"
+                      name="bedrooms"
+                      value={(formData as any).bedrooms || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                      placeholder="3"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Salles de bain</label>
+                    <input
+                      type="number"
+                      name="bathrooms"
+                      value={(formData as any).bathrooms || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                      placeholder="2"
+                      min="0"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombre de salles de bain *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.bathrooms}
-                    onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-                    placeholder="1"
-                    min="1"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Étage</label>
+                    <input
+                      type="number"
+                      name="floor"
+                      value={(formData as any).floor || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                      placeholder="1"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        name="furnished"
+                        checked={formData.furnished}
+                        onChange={handleCheckboxChange}
+                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                      />
+                      <span className="text-slate-700">Meublé</span>
+                    </label>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Surface (m²)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.area_sqm}
-                    onChange={(e) => setFormData({ ...formData, area_sqm: e.target.value })}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-                    placeholder="120"
-                    min="1"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Équipements */}
+                  <div>
+                    <h4 className="text-md font-medium text-slate-800 mb-3">Équipements</h4>
+                    <div className="space-y-3">
+                      {[
+                        { name: 'air_conditioning', label: 'Climatisation' },
+                        { name: 'heating', label: 'Chauffage' },
+                        { name: 'hot_water', label: 'Eau chaude' },
+                        { name: 'internet', label: 'Internet' },
+                        { name: 'elevator', label: 'Ascenseur' },
+                      ].map((item) => (
+                        <label key={item.name} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name={item.name}
+                            checked={formData[item.name as keyof typeof formData] as boolean}
+                            onChange={handleCheckboxChange}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-md font-medium text-slate-800 mb-3">Extérieur</h4>
+                    <div className="space-y-3">
+                      {[
+                        { name: 'balcony', label: 'Balcon' },
+                        { name: 'garden', label: 'Jardin' },
+                        { name: 'pool', label: 'Piscine' },
+                      ].map((item) => (
+                        <label key={item.name} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name={item.name}
+                            checked={formData[item.name as keyof typeof formData] as boolean}
+                            onChange={handleCheckboxChange}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Équipements et Sécurité */}
+            {/* Champs spécifiques aux terrains */}
+            {propertyType === 'land' && (
+              <div className="bg-slate-50 p-6 rounded-lg mb-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du terrain</h3>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Type de terrain</label>
+                  <select
+                    name="land_type"
+                    value={(formData as any).land_type || 'residential'}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  >
+                    <option value="residential">Résidentiel</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="agricultural">Agricole</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-md font-medium text-slate-800 mb-3">Équipements</h4>
+                    <div className="space-y-3">
+                      {[
+                        { name: 'has_water', label: 'Accès à l\'eau' },
+                        { name: 'has_electricity', label: 'Électricité disponible' },
+                        { name: 'is_flat', label: 'Terrain plat' },
+                        { name: 'has_fence', label: 'Clôturé' },
+                      ].map((item) => (
+                        <label key={item.name} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name={item.name}
+                            checked={formData[item.name as keyof typeof formData] as boolean}
+                            onChange={handleCheckboxChange}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Champs spécifiques aux locaux commerciaux */}
+            {propertyType === 'shop' && (
+              <div className="bg-slate-50 p-6 rounded-lg mb-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du local commercial</h3>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Type de commerce</label>
+                  <select
+                    name="shop_type"
+                    value={(formData as any).shop_type || 'retail'}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  >
+                    <option value="retail">Commerce de détail</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="office">Bureau</option>
+                    <option value="other">Autre</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-md font-medium text-slate-800 mb-3">Équipements</h4>
+                    <div className="space-y-3">
+                      {[
+                        { name: 'has_toilet', label: 'Toilettes' },
+                        { name: 'has_storage', label: 'Local de stockage' },
+                        { name: 'has_showcase', label: 'Vitrine' },
+                        { name: 'has_ac', label: 'Climatisation' },
+                        { name: 'has_security_system', label: 'Système de sécurité' },
+                      ].map((item) => (
+                        <label key={item.name} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            name={item.name}
+                            checked={formData[item.name as keyof typeof formData] as boolean}
+                            onChange={handleCheckboxChange}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Équipements généraux et Sécurité */}
             <div className="bg-slate-50 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Équipements et Sécurité</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Équipements généraux et Sécurité</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Équipements */}
                 <div>
-                  <h4 className="text-md font-medium text-slate-800 mb-3">Équipements</h4>
+                  <h4 className="text-md font-medium text-slate-800 mb-3">Équipements généraux</h4>
                   <div className="space-y-3">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.air_conditioning}
-                        onChange={(e) => setFormData({ ...formData, air_conditioning: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Climatisation</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.heating}
-                        onChange={(e) => setFormData({ ...formData, heating: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Chauffage</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.hot_water}
-                        onChange={(e) => setFormData({ ...formData, hot_water: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Eau chaude</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.internet}
-                        onChange={(e) => setFormData({ ...formData, internet: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Internet</span>
-                    </label>
-
                     <label className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -611,50 +884,9 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
                       />
                       <span className="text-slate-700">Parking</span>
                     </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.elevator}
-                        onChange={(e) => setFormData({ ...formData, elevator: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Ascenseur</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.balcony}
-                        onChange={(e) => setFormData({ ...formData, balcony: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Balcon/Terrasse</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.garden}
-                        onChange={(e) => setFormData({ ...formData, garden: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Jardin</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.pool}
-                        onChange={(e) => setFormData({ ...formData, pool: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Piscine</span>
-                    </label>
                   </div>
                 </div>
-
-                {/* Sécurité */}
+                
                 <div>
                   <h4 className="text-md font-medium text-slate-800 mb-3">Sécurité</h4>
                   <div className="space-y-3">
@@ -665,27 +897,7 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
                         onChange={(e) => setFormData({ ...formData, security_cameras: e.target.checked })}
                         className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
                       />
-                      <span className="text-slate-700">Caméras de surveillance</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.alarm_system}
-                        onChange={(e) => setFormData({ ...formData, alarm_system: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Système d'alarme</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={formData.interphone}
-                        onChange={(e) => setFormData({ ...formData, interphone: e.target.checked })}
-                        className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
-                      />
-                      <span className="text-slate-700">Interphone</span>
+                      <span className="text-slate-700">Caméras de sécurité</span>
                     </label>
 
                     <label className="flex items-center gap-3">
@@ -697,6 +909,30 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
                       />
                       <span className="text-slate-700">Gardien</span>
                     </label>
+
+                    {(propertyType === 'house' || propertyType === 'residence') && (
+                      <>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={(formData as any).alarm_system || false}
+                            onChange={(e) => setFormData({ ...formData, alarm_system: e.target.checked })}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">Système d'alarme</span>
+                        </label>
+
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={(formData as any).interphone || false}
+                            onChange={(e) => setFormData({ ...formData, interphone: e.target.checked })}
+                            className="w-4 h-4 text-ci-orange-600 rounded focus:ring-ci-orange-500"
+                          />
+                          <span className="text-slate-700">Interphone</span>
+                        </label>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

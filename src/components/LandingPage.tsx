@@ -12,6 +12,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'house' | 'residence' | 'land' | 'shop'>('all');
+  const [filteredHouses, setFilteredHouses] = useState<House[]>([]);
 
   const handleGetStarted = () => {
     // Rediriger directement vers la page de connexion en forçant l'état d'authentification
@@ -22,6 +24,14 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
     fetchFeaturedHouses();
     fetchRecentHouses();
   }, []);
+
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      setFilteredHouses(houses);
+    } else {
+      setFilteredHouses(houses.filter(house => house.type === selectedCategory));
+    }
+  }, [selectedCategory, houses]);
 
   const fetchFeaturedHouses = async () => {
     try {

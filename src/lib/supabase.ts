@@ -19,54 +19,83 @@ export interface Profile {
 }
 
 export interface House {
+  // Identifiants et métadonnées
   id: number;
   owner_id: string;
+  created_at: string;
+  updated_at?: string;
+  status: 'available' | 'taken' | 'pending';
+  type: 'residence' | 'house' | 'land' | 'shop';
+
+  // Informations de base
   title: string;
   description: string | null;
   price: number;
   location: string;
   city: string;
-  bedrooms: number;
-  bathrooms: number;
+  neighborhood?: string | null;
   area_sqm?: number | null;
-  photos?: string[] | null;
-  videos?: string[] | null;
-  amenities?: string[] | null;
-  status: 'available' | 'taken' | 'pending';
+  
+  // Médias
   image_url?: string | null;
   video_url?: string | null;
   virtual_tour_url?: string | null;
+  photos?: string[] | null;
+  videos?: string[] | null;
   image_data?: string | null;
-  created_at: string;
-  updated_at?: string;
+  amenities?: string[] | null;
 
-  // Nouveaux champs ajoutés
-  neighborhood?: string | null;
-  type?: 'residence' | 'house' | 'land' | 'shop'; // Added type field
-  property_type?: string | null;
+  // Caractéristiques générales
+  parking?: boolean | null;
+  security_cameras?: boolean | null;
+  guardian?: boolean | null;
   furnished?: boolean | null;
   floor?: number | null;
-  elevator?: boolean | null;
-  parking?: boolean | null;
-  balcony?: boolean | null;
-  garden?: boolean | null;
-  pool?: boolean | null;
+
+  // Caractéristiques des logements (résidences et maisons)
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   air_conditioning?: boolean | null;
   heating?: boolean | null;
   hot_water?: boolean | null;
   internet?: boolean | null;
-  security_cameras?: boolean | null;
+  elevator?: boolean | null;
+  balcony?: boolean | null;
+  garden?: boolean | null;
+  pool?: boolean | null;
   alarm_system?: boolean | null;
   interphone?: boolean | null;
-  guardian?: boolean | null;
+
+  // Caractéristiques des terrains
+  land_type?: 'residential' | 'commercial' | 'agricultural' | null;
+  has_water?: boolean | null;
+  has_electricity?: boolean | null;
+  is_flat?: boolean | null;
+  has_fence?: boolean | null;
+
+  // Caractéristiques des magasins
+  shop_type?: 'retail' | 'restaurant' | 'office' | 'other' | null;
+  has_toilet?: boolean | null;
+  has_storage?: boolean | null;
+  has_showcase?: boolean | null;
+  has_ac?: boolean | null;
+  has_security_system?: boolean | null;
+  
+  // Informations financières et conditions
   deposit_amount?: number | null;
   agency_fees?: number | null;
   utilities_included?: boolean | null;
   utilities_amount?: number | null;
+  
+  // Disponibilité et conditions
   availability_date?: string | null;
   minimum_rental_period?: number | null;
+  
+  // Règles
   pets_allowed?: boolean | null;
   smoking_allowed?: boolean | null;
+  
+  // Localisation avancée
   proximity_transport?: string | null;
   proximity_schools?: string | null;
   proximity_shops?: string | null;
