@@ -8,7 +8,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant') => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant', phone: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -141,17 +141,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'owner' | 'tenant') => {
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: 'owner' | 'tenant',
+    phone: string
+  ) => {
     // Validation des entrées
     const emailValidation = SecurityUtils.validateEmail(email);
     const passwordValidation = SecurityUtils.validatePassword(password);
     const nameValidation = SecurityUtils.validateFullName(fullName);
+    const phoneValidation = SecurityUtils.validatePhone(phone);
 
-    if (!emailValidation.isValid || !passwordValidation.isValid || !nameValidation.isValid) {
+    if (!emailValidation.isValid || !passwordValidation.isValid || !nameValidation.isValid || !phoneValidation.isValid) {
       const allErrors = [
         ...emailValidation.errors,
         ...passwordValidation.errors,
-        ...nameValidation.errors
+        ...nameValidation.errors,
+        ...phoneValidation.errors,
       ];
       throw new Error(`Erreurs de validation: ${allErrors.join(', ')}`);
     }
@@ -165,6 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Nettoyage des entrées
     const sanitizedEmail = SecurityUtils.sanitizeInput(email.toLowerCase());
     const sanitizedName = SecurityUtils.sanitizeInput(fullName);
+    const sanitizedPhone = SecurityUtils.sanitizeInput(phone);
 
     const { data, error } = await supabase.auth.signUp({
       email: sanitizedEmail,
@@ -173,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           full_name: sanitizedName,
           role: role,
+          phone: sanitizedPhone,
         },
       },
     });
@@ -184,8 +194,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
-      // L'utilisateur doit confirmer son email avant de pouvoir se connecter
-      // Le profil sera créé automatiquement via le trigger après confirmation
+      // Créer ou mettre à jour immédiatement le profil avec le numéro de téléphone
+      await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: data.user.id,
+            full_name: sanitizedName,
+            role,
+            email: sanitizedEmail,
+            phone: sanitizedPhone,
+          },
+          { onConflict: 'id' }
+        );
       console.log('Utilisateur créé, en attente de confirmation email');
     }
   };

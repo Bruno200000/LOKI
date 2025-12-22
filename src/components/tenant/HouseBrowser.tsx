@@ -14,6 +14,8 @@ export const HouseBrowser: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState('');
+  const [ownerPhones, setOwnerPhones] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchHouses();
@@ -21,7 +23,7 @@ export const HouseBrowser: React.FC = () => {
 
   useEffect(() => {
     filterHouses();
-  }, [houses, searchTerm, selectedCity, maxPrice, minBedrooms]);
+  }, [houses, searchTerm, selectedCity, maxPrice, minBedrooms, neighborhoodFilter]);
 
   const fetchHouses = async () => {
     try {
@@ -80,12 +82,28 @@ export const HouseBrowser: React.FC = () => {
         console.log('   - Vérifiez les politiques de sécurité (RLS) pour l\'accès public');
         console.log('   - Testez l\'accessibilité des URLs dans le navigateur');
       }
+      // Précharger les numéros des propriétaires pour affichage
+      const ownerIds = Array.from(new Set((data || []).map((h: any) => h.owner_id)));
+      if (ownerIds.length > 0) {
+        const { data: owners, error: ownersError } = await supabase
+          .from('profiles')
+          .select('id, phone')
+          .in('id', ownerIds);
+        if (!ownersError && owners) {
+          const map: Record<string, string> = {};
+          owners.forEach((o: any) => { map[o.id] = o.phone || 'Non disponible'; });
+          setOwnerPhones(map);
+        }
+      }
+
     } catch (error) {
       console.error('Error fetching houses:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const [selectedType, setSelectedType] = useState<string>('all');
 
   const filterHouses = () => {
     let filtered = [...houses];
@@ -95,13 +113,23 @@ export const HouseBrowser: React.FC = () => {
         (house) =>
           house.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           house.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (house.neighborhood && house.neighborhood.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (house.description && house.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+    }
+
+    if (selectedType && selectedType !== 'all') {
+      filtered = filtered.filter((house) => house.type === selectedType);
     }
 
     if (selectedCity) {
       filtered = filtered.filter((house) => house.city === selectedCity);
     }
+
+    if (neighborhoodFilter) {
+      filtered = filtered.filter((house) => (house.neighborhood || '').toLowerCase().includes(neighborhoodFilter.toLowerCase()));
+    }
+
 
     if (maxPrice) {
       filtered = filtered.filter((house) => house.price <= parseFloat(maxPrice));
@@ -123,12 +151,62 @@ export const HouseBrowser: React.FC = () => {
     <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          Trouvez votre prochain logement
+          Mise en relation directe, sans paiement côté utilisateur
         </h1>
         <p className="text-slate-600">
           {filteredHouses.length} propriété{filteredHouses.length > 1 ? 's' : ''} disponible
           {filteredHouses.length > 1 ? 's' : ''}
         </p>
+      </div>
+
+      <div className="mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 min-w-max">
+          <button
+            onClick={() => setSelectedType('all')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'all'
+                ? 'bg-ci-orange-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+          >
+            Tout voir
+          </button>
+          <button
+            onClick={() => setSelectedType('residence')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'residence'
+                ? 'bg-ci-orange-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+          >
+            Résidences Meublées
+          </button>
+          <button
+            onClick={() => setSelectedType('house')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'house'
+                ? 'bg-ci-orange-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+          >
+            Maisons à louer
+          </button>
+          <button
+            onClick={() => setSelectedType('land')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'land'
+                ? 'bg-ci-orange-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+          >
+            Vente Terrain/Maison
+          </button>
+          <button
+            onClick={() => setSelectedType('shop')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'shop'
+                ? 'bg-ci-orange-600 text-white shadow-md'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+          >
+            Magasin/Commerce
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 space-y-4">
@@ -139,17 +217,16 @@ export const HouseBrowser: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher par titre, localisation ou description..."
+              placeholder="Rechercher par titre, quartier, localisation..."
               className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition ${
-              showFilters
-                ? 'bg-ci-orange-600 text-white'
-                : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition ${showFilters
+              ? 'bg-ci-orange-600 text-white'
+              : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Filter className="w-5 h-5" />
             Filtres
@@ -158,7 +235,7 @@ export const HouseBrowser: React.FC = () => {
 
         {showFilters && (
           <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Ville
@@ -206,6 +283,18 @@ export const HouseBrowser: React.FC = () => {
                   <option value="4">4+</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Quartier
+                </label>
+                <input
+                  type="text"
+                  value={neighborhoodFilter}
+                  onChange={(e) => setNeighborhoodFilter(e.target.value)}
+                  placeholder="Cocody, Yopougon..."
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none"
+                />
+              </div>
             </div>
 
             <button
@@ -214,6 +303,7 @@ export const HouseBrowser: React.FC = () => {
                 setMaxPrice('');
                 setMinBedrooms('');
                 setSearchTerm('');
+                setNeighborhoodFilter('');
               }}
               className="text-sm text-ci-orange-600 hover:text-ci-orange-700 font-semibold flex items-center gap-1"
             >
@@ -298,11 +388,10 @@ export const HouseBrowser: React.FC = () => {
                   if (videosToShow.length > 0) {
                     return (
                       <div className="absolute top-3 left-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          videosToShow.length > 1
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${videosToShow.length > 1
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-blue-100 text-blue-800'
+                          }`}>
                           {videosToShow.length > 1 ? `VIDEO (${videosToShow.length})` : 'VIDEO'}
                         </span>
                       </div>
@@ -314,6 +403,11 @@ export const HouseBrowser: React.FC = () => {
               </div>
 
               <div className="p-5">
+                {house.type !== 'residence' && (
+                  <div className="mb-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm font-medium">
+                    Téléphone propriétaire: {ownerPhones[house.owner_id] || 'Non disponible'}
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg text-slate-900 line-clamp-1">
                     {house.title}

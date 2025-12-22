@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users, Phone } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface RegisterProps {
@@ -12,6 +12,7 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'owner' | 'tenant'>('tenant');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -30,7 +31,7 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
     }
 
     try {
-      await signUp(email, password, fullName, role);
+      await signUp(email, password, fullName, role, phone);
       setSuccess('Compte créé avec succès ! Vérifiez votre email et cliquez sur le lien de confirmation. Vous serez ensuite redirigé vers votre tableau de bord.');
       setLoading(false);
       // Ne pas vider les champs pour permettre à l'utilisateur de voir le message de succès
@@ -113,6 +114,24 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition"
                   placeholder="Jean Kouassi"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                Numéro de téléphone
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition"
+                  placeholder="07 00 00 00 00"
                   required
                 />
               </div>

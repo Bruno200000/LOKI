@@ -230,7 +230,7 @@ export const DemoPage: React.FC = () => {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">Réservations Simplifiées</h3>
               <p className="text-slate-300 text-sm sm:text-base">
-                Processus de réservation fluide avec paiements sécurisés intégrés
+                Processus de réservation fluide, sans paiement côté utilisateur. Contact direct avec le propriétaire.
               </p>
             </div>
 

@@ -5,9 +5,7 @@ import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
 import { DemoPage } from './components/DemoPage';
 import { PropertyDetailsModal } from './components/tenant/PropertyDetailsModal';
-import { PaymentPage } from './components/tenant/PaymentPage';
 import { BookingForm } from './components/tenant/BookingForm';
-import { PaymentSuccess } from './components/payments/PaymentSuccess';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { OwnerDashboard } from './components/owner/OwnerDashboard';
@@ -105,22 +103,11 @@ const BookingFormPage: React.FC<{ houseId: string }> = ({ houseId }) => {
     <BookingForm
       house={house}
       onBack={() => window.history.back()}
-      onBookingSuccess={(bookingId) => {
-        window.location.href = `/payment/${bookingId}`;
-      }}
+      onBookingSuccess={(_bookingId) => {}}
     />
   );
 };
 
-// Payment Page Component
-const PaymentPageComponent: React.FC<{ bookingId: string }> = ({ bookingId }) => {
-  return (
-    <PaymentPage
-      bookingId={bookingId}
-      onBack={() => window.history.back()}
-    />
-  );
-};
 
 function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -229,17 +216,7 @@ function AppContent() {
     return <BookingFormPage houseId={houseId} />;
   }
 
-  // Handle payment success page
-  if (currentPath === '/payment/success') {
-    return <PaymentSuccess />;
-  }
-
-  // Handle payment page
-  const paymentMatch = currentPath.match(/^\/payment\/(.+)$/);
-  if (paymentMatch) {
-    const bookingId = paymentMatch[1];
-    return <PaymentPageComponent bookingId={bookingId} />;
-  }
+  // Suppression des pages de paiement (plus de flux paiement côté utilisateur)
 
   // Authentication logic - this should execute AFTER URL routing
   if (!user || !profile) {

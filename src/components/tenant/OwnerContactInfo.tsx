@@ -4,10 +4,9 @@ import { User, Phone, MapPin, Eye, EyeOff } from 'lucide-react';
 
 interface OwnerContactInfoProps {
   ownerId: string;
-  bookingId: string;
 }
 
-export const OwnerContactInfo: React.FC<OwnerContactInfoProps> = ({ ownerId, bookingId }) => {
+export const OwnerContactInfo: React.FC<OwnerContactInfoProps> = ({ ownerId }) => {
   const [owner, setOwner] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -19,22 +18,7 @@ export const OwnerContactInfo: React.FC<OwnerContactInfoProps> = ({ ownerId, boo
 
   const fetchOwnerInfo = async () => {
     try {
-      // Check if commission payment is completed for this booking
-      const { data: payment, error: paymentError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('booking_id', bookingId)
-        .eq('payment_type', 'commission')
-        .eq('status', 'completed')
-        .single();
-
-      if (paymentError || !payment) {
-        setError('Le paiement de la commission doit être complété pour voir les informations du propriétaire');
-        setLoading(false);
-        return;
-      }
-
-      // Fetch owner information
+      // Récupérer directement les informations du propriétaire (aucun paiement requis côté utilisateur)
       const { data: ownerData, error: ownerError } = await supabase
         .from('profiles')
         .select('*')
@@ -148,7 +132,7 @@ export const OwnerContactInfo: React.FC<OwnerContactInfoProps> = ({ ownerId, boo
 
       <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
         <p className="text-sm text-green-800">
-          <strong>Note:</strong> Ces informations sont visibles car vous avez payé la commission de plateforme de 1 000 FCFA.
+          <strong>Note:</strong> Ces informations sont visibles après votre réservation. Aucun paiement requis côté utilisateur.
         </p>
       </div>
     </div>

@@ -229,10 +229,9 @@ export const BookingManager: React.FC = () => {
                       </button>
                       {booking.status === 'confirmed' && (
                         <div className="mt-2 sm:mt-0">
-                          {booking?.owner_id && booking?.id && (
+                          {booking?.owner_id && (
                             <OwnerContactInfo 
                               ownerId={booking.owner_id.toString()} 
-                              bookingId={booking.id.toString()} 
                             />
                           )}
                         </div>

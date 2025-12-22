@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, House } from '../../lib/supabase';
-import { wavePaymentService } from '../../lib/wavePayment';
-import { X, MapPin, Bed, Bath, Calendar, AlertCircle, CreditCard } from 'lucide-react';
-import { PaymentModal } from '../payments/PaymentModal';
+import { X, MapPin, Bed, Bath, Calendar, AlertCircle } from 'lucide-react';
 
 interface BookingModalProps {
   house: House;
@@ -11,7 +9,6 @@ interface BookingModalProps {
   onBookingComplete: () => void;
 }
 
-const COMMISSION_FEE = 1000;
 
 export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBookingComplete }): JSX.Element => {
   const { profile } = useAuth();
@@ -20,36 +17,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'details' | 'payment'>('details');
-  const [paymentMethod] = useState<'wave'>('wave'); // Forcer Wave comme méthode de paiement
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingPaymentData, setPendingPaymentData] = useState<{
-    bookingId: string;
-    paymentId: string;
-    amount: number;
-    description: string;
-  } | null>(null);
+  const [step] = useState<'details'>('details');
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const handleContinueToPayment = () => {
+  const validateDates = () => {
     try {
       if (!moveInDate) {
         setError('Veuillez sélectionner une date d\'arrivée');
-        return;
+        return false;
       }
       
       if (!endDate) {
         setError('Veuillez sélectionner une date de départ');
-        return;
+        return false;
       }
 
       if (!endDate) {
         setError('Veuillez sélectionner une date de fin de location');
-        return;
+        return false;
       }
 
       // Valider que les dates sont valides
@@ -58,21 +47,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
 
       if (isNaN(startDate.getTime()) || isNaN(endDateObj.getTime())) {
         setError('Veuillez sélectionner des dates valides');
-        return;
+        return false;
       }
 
       // S'assurer que la date de fin est après la date de début
       if (endDateObj <= startDate) {
         setError('La date de fin doit être après la date d\'emménagement');
-        return;
+        return false;
       }
 
       setError('');
-      setStep('payment');
+      return true;
     } catch (err: any) {
       console.error('Erreur lors de la validation des dates:', err);
       setError('Une erreur est survenue lors de la validation des dates');
       setLoading(false);
+      return false;
     }
   };
 
@@ -137,7 +127,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
         return date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       };
 
-      // Créer la réservation
+      // Créer la réservation (sans paiement côté utilisateur)
+      const commission = house.type === 'residence' ? 2000 : (house.type === 'house' ? 5000 : null);
       const bookingData = {
         house_id: house.id,
         tenant_id: profile.id,
@@ -146,56 +137,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
         end_date: formatDateForDB(endDate),
         start_date: formatDateForDB(moveInDate), // Formatage explicite pour la base de données
         status: 'pending',
-        commission_fee: COMMISSION_FEE,
+        commission_fee: commission || undefined,
         monthly_rent: house.price,
         notes: notes || null,
       };
 
       // 1. Créer la réservation
-      const { data: booking, error: bookingError } = await supabase
+      const { error: bookingError } = await supabase
         .from('bookings')
-        .insert([bookingData])
-        .select()
-        .single();
+        .insert([bookingData]);
 
       if (bookingError) throw bookingError;
 
-      // 2. Préparer les données pour le paiement
-      const paymentData = {
-        booking_id: booking.id,
-        amount: COMMISSION_FEE,
-        payment_type: 'commission',
-        payment_method: 'wave',
-        status: 'pending',
-        paid_by: profile.id,
-        paid_to: house.owner_id,
-        description: `Réservation #${booking.id} - ${house.title}`,
-        metadata: {
-          house_id: house.id,
-          house_title: house.title,
-          tenant_id: profile.id,
-          move_in_date: moveInDate,
-        },
-      };
-
-      // 3. Enregistrer le paiement en attente
-      const { data: payment, error: paymentError } = await supabase
-        .from('payments')
-        .insert([paymentData])
-        .select()
-        .single();
-
-      if (paymentError) throw paymentError;
-
-      // Stocker les données de paiement et ouvrir le modal de paiement
-      setPendingPaymentData({
-        bookingId: booking.id,
-        paymentId: payment.id,
-        amount: COMMISSION_FEE,
-        description: `Commission réservation - ${house.title}`,
-      });
-
-      setShowPaymentModal(true);
+      // Réservation enregistrée, notifier le parent
+      onBookingComplete();
       setLoading(false);
 
     } catch (err: any) {
@@ -203,51 +158,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
       setError(err.message || 'Une erreur est survenue lors de la réservation');
       setLoading(false);
     }
-  };
-
-  const handlePaymentSuccess = async () => {
-    if (!pendingPaymentData || !profile) return;
-
-    try {
-      // Créer la session de paiement Wave
-      const { session_url } = await wavePaymentService.createCheckoutSession({
-        amount: pendingPaymentData.amount,
-        currency: 'XOF',
-        error_url: `${window.location.origin}/payment/error?payment=${pendingPaymentData.paymentId}`,
-        success_url: `${window.location.origin}/payment/success?payment=${pendingPaymentData.paymentId}`,
-        description: pendingPaymentData.description,
-        customer_email: profile.email || '',
-        customer_phone: profile.phone || ''
-      });
-
-      // Mettre à jour le paiement avec l'ID de session Wave
-      const { error: updateError } = await supabase
-        .from('payments')
-        .update({
-          external_payment_id: session_url.split('/').pop(),
-          status: 'pending',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', pendingPaymentData.paymentId);
-
-      if (updateError) throw updateError;
-
-      // Notifier le composant parent que la réservation est complétée
-      onBookingComplete();
-
-      // Fermer le modal de paiement et rediriger vers Wave
-      setShowPaymentModal(false);
-      window.location.href = session_url;
-
-    } catch (err: any) {
-      console.error('Erreur lors de la création de la session de paiement:', err);
-      setError(err.message || 'Erreur lors de la création de la session de paiement');
-    }
-  };
-
-  const handlePaymentError = (error: string) => {
-    setError(error);
-    setShowPaymentModal(false);
   };
 
   return (
@@ -306,7 +216,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
           </div>
 
           {step === 'details' ? (
-            <form onSubmit={(e) => { e.preventDefault(); handleContinueToPayment(); }} className="space-y-4 sm:space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); if (validateDates()) { handleBookingSubmit(); } }} className="space-y-4 sm:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -364,118 +274,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({ house, onClose, onBo
                 />
               </div>
 
-              <div className="bg-ci-green-50 border border-ci-green-200 rounded-lg p-4">
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700 text-sm sm:text-base">Loyer mensuel:</span>
-                    <span className="font-semibold text-slate-900 text-sm sm:text-base">
-                      {house.price.toLocaleString()} FCFA
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700 text-sm sm:text-base">Commission plateforme:</span>
-                    <span className="font-semibold text-slate-900 text-sm sm:text-base">
-                      {COMMISSION_FEE.toLocaleString()} FCFA
-                    </span>
-                  </div>
-                  <div className="border-t border-ci-green-200 mt-3 pt-3 flex items-center justify-between">
-                    <span className="font-semibold text-slate-900 text-sm sm:text-base">Total à payer maintenant:</span>
-                    <span className="text-xl sm:text-2xl font-bold text-ci-orange-600">
-                      {COMMISSION_FEE.toLocaleString()} FCFA
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-ci-orange-600 hover:bg-ci-orange-700 disabled:bg-slate-400 text-white font-semibold py-3 sm:py-4 rounded-lg transition text-sm sm:text-base"
               >
-                Continuer vers le paiement
+                Enregistrer la réservation (aucun paiement requis)
               </button>
             </form>
-          ) : (
-            <form onSubmit={(e) => { e.preventDefault(); handleBookingSubmit(); }} className="space-y-4 sm:space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-3">
-                  Méthode de paiement
-                </label>
-                <div className="space-y-3">
-                  <div className="p-3 sm:p-4 border-2 border-ci-orange-500 bg-ci-orange-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                      <span className="font-semibold text-slate-900 text-sm sm:text-base">Wave</span>
-                      <span className="ml-auto px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                        Recommandé
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 mt-2">
-                      Paiement sécurisé via Wave Mobile Money
-                    </p>
-                  </div>
-
-                  <div className="p-3 sm:p-4 border-2 border-slate-200 rounded-lg opacity-50 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
-                      <span className="font-semibold text-slate-400 text-sm sm:text-base">Orange Money</span>
-                      <span className="ml-auto px-2 py-1 bg-slate-100 text-slate-400 text-xs font-medium rounded">
-                        Bientôt disponible
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 sm:p-4 border-2 border-slate-200 rounded-lg opacity-50 cursor-not-allowed">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                      <span className="font-semibold text-slate-400 text-sm sm:text-base">Moov Money</span>
-                      <span className="ml-auto px-2 py-1 bg-slate-100 text-slate-400 text-xs font-medium rounded">
-                        Bientôt disponible
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
-                <p className="text-sm text-amber-900">
-                  <strong>Note:</strong> Après avoir confirmé, vous serez redirigé vers {paymentMethod === 'wave' ? 'Wave' : paymentMethod === 'orange_money' ? 'Orange Money' : 'Moov Money'} pour finaliser le paiement de {COMMISSION_FEE.toLocaleString()} FCFA.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep('details')}
-                  className="flex-1 px-4 sm:px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition text-sm sm:text-base"
-                >
-                  Retour
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-ci-orange-600 hover:bg-ci-orange-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition text-sm sm:text-base"
-                >
-                  {loading ? 'Traitement...' : 'Confirmer la réservation'}
-                </button>
-              </div>
-            </form>
-          )}
+          ) : null}
         </div>
       </div>
-
-      {/* Modal de paiement sécurisé */}
-      {showPaymentModal && pendingPaymentData && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          amount={pendingPaymentData.amount}
-          currency="XOF"
-          description={pendingPaymentData.description}
-          onPaymentSuccess={handlePaymentSuccess}
-          onPaymentError={handlePaymentError}
-        />
-      )}
     </div>
   );
 };

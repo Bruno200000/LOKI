@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase, House } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Calendar, User, MapPin, Home, Loader } from 'lucide-react';
+import { ArrowLeft, Calendar, User, MapPin, Home, Loader, Phone } from 'lucide-react';
 
 interface BookingFormProps {
   house: House;
@@ -9,22 +9,32 @@ interface BookingFormProps {
   onBookingSuccess: (bookingId: string) => void;
 }
 
-export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBookingSuccess }) => {
+export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
   const { user, profile } = useAuth();
-  const [moveInDate, setMoveInDate] = useState('');
+  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [phone, setPhone] = useState(profile?.phone || '');
+  const [dateToAdd, setDateToAdd] = useState('');
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !profile) {
-      setError('Veuillez vous connecter pour effectuer une réservation');
+      setError("Veuillez vous connecter pour effectuer une réservation (aucun paiement requis)");
       return;
     }
-    
-    if (!moveInDate) {
-      setError('Veuillez sélectionner une date d\'arrivée');
+
+    if (!fullName || !phone) {
+      setError("Veuillez renseigner votre nom et votre numéro de téléphone");
+      return;
+    }
+
+    if (selectedDates.length === 0) {
+      setError("Veuillez ajouter au moins une date de réservation");
       return;
     }
 
@@ -38,30 +48,54 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
         return date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       };
 
-      // Create booking record
-      const { data: bookingData, error: bookingError } = await supabase
+      // Déterminer la période (du plus tôt au plus tard)
+      const sorted = [...selectedDates].sort();
+      const earliest = sorted[0];
+      const latest = sorted[sorted.length - 1];
+
+      // Calcul frais fixe selon type
+      const commission = house.type === 'residence' ? 2000 : (house.type === 'house' ? 5000 : null);
+
+      // Créer la réservation (sans paiement côté utilisateur)
+      const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
           house_id: house.id,
           tenant_id: user.id,
           owner_id: house.owner_id,
-          move_in_date: formatDateForDB(moveInDate),
-          start_date: formatDateForDB(moveInDate), // Using move-in date as start date
-          end_date: new Date(new Date(moveInDate).setMonth(new Date(moveInDate).getMonth() + 12))
-            .toISOString()
-            .split('T')[0], // Default to 1 year after move-in
+          move_in_date: formatDateForDB(earliest),
+          start_date: formatDateForDB(earliest),
+          end_date: formatDateForDB(latest),
           status: 'pending',
-          commission_fee: 1000,
+          commission_fee: commission || undefined,
           monthly_rent: house.price,
-          notes: notes || null
+          // Stocker nom/téléphone/dates dans notes au format JSON pour éviter des migrations
+          notes: JSON.stringify({
+            tenant_name: fullName,
+            tenant_phone: phone,
+            reservation_dates: sorted,
+            message: notes || null
+          })
         })
         .select()
         .single();
 
       if (bookingError) throw bookingError;
 
-      // Redirect to payment page
-      onBookingSuccess(bookingData.id);
+      // Fetch owner phone
+      const { data: ownerData, error: ownerError } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', house.owner_id)
+        .single();
+
+      if (ownerError) {
+        console.error("Could not fetch owner phone", ownerError);
+      }
+
+      setOwnerPhone(ownerData?.phone || 'Non disponible');
+      setSuccess(true);
+      // Pas de redirection vers une page de paiement
 
     } catch (err: any) {
       console.error('Error creating booking:', err);
@@ -72,9 +106,62 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
   };
 
   const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1); // Tomorrow at earliest
+  minDate.setDate(minDate.getDate() + 1); // Demain au plus tôt
   const maxDate = new Date();
-  maxDate.setMonth(maxDate.getMonth() + 6); // 6 months from now
+  maxDate.setMonth(maxDate.getMonth() + 6); // Dans 6 mois au plus tard
+
+  const addDate = () => {
+    if (!dateToAdd) return;
+    // borne min/max
+    const d = new Date(dateToAdd);
+    if (d < minDate || d > maxDate) return;
+    if (!selectedDates.includes(dateToAdd)) {
+      setSelectedDates([...selectedDates, dateToAdd]);
+    }
+    setDateToAdd('');
+  };
+
+  const removeDate = (d: string) => {
+    setSelectedDates(selectedDates.filter(x => x !== d));
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-8 h-8 text-green-600">✓</div>
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-4">Réservation envoyée !</h1>
+            <p className="text-slate-600 mb-8">
+              Votre demande de réservation a bien été enregistrée. Voici les coordonnées du propriétaire pour finaliser les détails :
+            </p>
+
+            <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-8">
+              <p className="text-sm text-green-800 mb-2 uppercase tracking-wide font-semibold">Numéro du propriétaire</p>
+              <div className="text-3xl font-bold text-green-900 tracking-wider select-all">
+                {ownerPhone}
+              </div>
+              <a
+                href={`tel:${ownerPhone}`}
+                className="inline-block mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition"
+              >
+                Appeler maintenant
+              </a>
+            </div>
+
+            <button
+              onClick={() => window.location.href = '/dashboard'}
+              className="text-slate-600 hover:text-slate-900 font-medium hover:underline"
+            >
+              Retour au tableau de bord
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -93,7 +180,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
           <div className="p-6">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Réserver cette propriété</h1>
-              <p className="text-slate-600">Complétez les informations pour finaliser votre réservation</p>
+              <p className="text-slate-600">Aucun paiement requis côté utilisateur. Renseignez vos informations et vos dates de séjour.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -131,16 +218,33 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
                 </h2>
                 <div className="space-y-3">
                   <div className="text-slate-900">
-                    <span className="font-medium">Nom:</span> {profile?.full_name || 'Non spécifié'}
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Nom complet</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500"
+                      placeholder="Votre nom complet"
+                      required
+                    />
+                  </div>
+                  <div className="text-slate-900">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Téléphone</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500"
+                        placeholder="07 00 00 00 00"
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="text-slate-900">
                     <span className="font-medium">Email:</span> {profile?.email || user?.email}
                   </div>
-                  {profile?.phone && (
-                    <div className="text-slate-900">
-                      <span className="font-medium">Téléphone:</span> {profile.phone}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -148,24 +252,41 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
             {/* Booking Form */}
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
               <div>
-                <label htmlFor="moveInDate" className="block text-sm font-medium text-slate-700 mb-2">
-                  Date d'emménagement souhaitée *
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Dates de réservation (une ou plusieurs)
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="date"
-                    id="moveInDate"
-                    value={moveInDate}
-                    onChange={(e) => setMoveInDate(e.target.value)}
-                    min={minDate.toISOString().split('T')[0]}
-                    max={maxDate.toISOString().split('T')[0]}
-                    className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500"
-                    required
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="date"
+                      value={dateToAdd}
+                      onChange={(e) => setDateToAdd(e.target.value)}
+                      min={minDate.toISOString().split('T')[0]}
+                      max={maxDate.toISOString().split('T')[0]}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addDate}
+                    className="px-4 py-2 bg-ci-orange-600 text-white rounded-lg hover:bg-ci-orange-700"
+                  >
+                    Ajouter
+                  </button>
                 </div>
+                {selectedDates.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedDates.sort().map(d => (
+                      <span key={d} className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-sm">
+                        {d}
+                        <button type="button" onClick={() => removeDate(d)} className="text-slate-500 hover:text-slate-700">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <p className="text-sm text-slate-500 mt-1">
-                  Sélectionnez une date entre demain et dans 6 mois
+                  Sélectionnez des dates entre demain et dans 6 mois. Vous pouvez en ajouter plusieurs.
                 </p>
               </div>
 
@@ -189,27 +310,15 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
                 </div>
               )}
 
-              <div className="bg-slate-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Résumé de la réservation</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Loyer mensuel</span>
-                    <span className="font-semibold">{house.price.toLocaleString()} FCFA</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Commission plateforme</span>
-                    <span className="font-semibold">1 000 FCFA</span>
-                  </div>
-                  <div className="border-t pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-900">Total à payer maintenant</span>
-                      <span className="text-xl font-bold text-ci-orange-600">1 000 FCFA</span>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-500 mt-3">
-                  Vous ne paierez que la commission maintenant. Le premier mois de loyer sera payé directement au propriétaire.
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Aucun frais côté utilisateur</h3>
+                <p className="text-blue-800 mb-4">
+                  La mise en relation est gratuite. Une fois la réservation enregistrée, le numéro du propriétaire s'affichera pour le contacter directement.
                 </p>
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center font-bold">!</div>
+                  Les frais fixes (2000 FCFA pour résidence, 5000 FCFA pour maison) sont réglés par le propriétaire après transaction réussie.
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -222,16 +331,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack, onBooki
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !moveInDate}
+                  disabled={loading || selectedDates.length === 0 || !fullName || !phone}
                   className="flex-1 px-6 py-3 bg-ci-orange-600 text-white rounded-lg hover:bg-ci-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <Loader className="w-5 h-5 animate-spin" />
-                      Création de la réservation...
+                      Envoi de la demande...
                     </>
                   ) : (
-                    'Confirmer la réservation'
+                    'Envoyer la demande'
                   )}
                 </button>
               </div>

@@ -139,10 +139,12 @@ export const AboutPage: React.FC<AboutPageProps> = () => {
             <span className="bg-gradient-to-r from-ci-orange-600 to-ci-green-500 bg-clip-text text-transparent">
               immobilière en Côte d'Ivoire
             </span>
+            <br />
+            <span className="text-ci-green-600">Résidences, maisons, terrains, magasins</span>
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            LOKI est née de la frustration de voir des propriétaires perdre des heures à gérer leurs biens
-            et des locataires passer des semaines à trouver le logement idéal.
+            LOKI est née de la frustration de voir des propriétaires perdre des heures à gérer leurs biens et des locataires passer des semaines à trouver le logement idéal.
+            Nous facilitons la mise en relation directe pour résidences, maisons, terrains et magasins — sans paiement côté utilisateur; les frais fixes sont réglés par le propriétaire après transaction réussie.
           </p>
         </div>
       </section>
@@ -177,8 +179,8 @@ export const AboutPage: React.FC<AboutPageProps> = () => {
                     <Shield className="h-6 w-6 text-ci-orange-600" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1">Sécuriser les transactions</h4>
-                    <p className="text-slate-600">Paiements sécurisés et contrats vérifiés pour tous</p>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">Mise en relation sécurisée</h4>
+                    <p className="text-slate-600">Aucun paiement requis côté utilisateur; frais fixes réglés par le propriétaire après transaction réussie</p>
                   </div>
                 </div>
                 <div className="flex items-start">

@@ -44,35 +44,56 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
     setCurrentImageIndex(index);
   };
 
-  const handleBookingClick = () => {
-    // Check if user is authenticated
+  // State for owner phone
+  const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
+  const [showPhone, setShowPhone] = useState(false);
+  const [loadingPhone, setLoadingPhone] = useState(false);
+
+  // Fetch owner phone
+  const handleShowPhone = async () => {
     if (!user) {
-      // Store the current URL for redirect after login
       sessionStorage.setItem('returnToProperty', window.location.href);
-      // Redirect directly to login page
-      window.location.href = '/';
+      window.location.href = '/?login=true';
       return;
     }
 
-    // User is authenticated, redirect to booking form
+    if (ownerPhone) {
+      setShowPhone(true);
+      return;
+    }
+
+    setLoadingPhone(true);
+    try {
+      const { data, error } = await import('../../lib/supabase').then(m => m.supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', house.owner_id)
+        .single()
+      );
+
+      if (error) throw error;
+      setOwnerPhone(data?.phone || 'Non disponible');
+      setShowPhone(true);
+    } catch (err) {
+      console.error('Error fetching owner phone:', err);
+    } finally {
+      setLoadingPhone(false);
+    }
+  };
+
+  const handleBookingClick = () => {
+    if (!user) {
+      sessionStorage.setItem('returnToProperty', window.location.href);
+      window.location.href = '/?login=true';
+      return;
+    }
     window.location.href = `/booking/${house.id}`;
   };
 
-  const getButtonContent = () => {
-    if (!user) {
-      return (
-        <>
-          Se connecter pour réserver
-        </>
-      );
-    }
-    return (
-      <>
-        <Calendar className="w-5 h-5" />
-        Réserver cette propriété
-      </>
-    );
-  };
+  const isResidence = house.type === 'residence';
+
+
+
 
   return (
     <>
@@ -231,11 +252,10 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                             <button
                               key={index}
                               onClick={() => goToImage(index)}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                index === currentImageIndex
-                                  ? 'bg-ci-orange-600'
-                                  : 'bg-slate-300 hover:bg-slate-400'
-                              }`}
+                              className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
+                                ? 'bg-ci-orange-600'
+                                : 'bg-slate-300 hover:bg-slate-400'
+                                }`}
                             />
                           ))}
                         </div>
@@ -547,39 +567,83 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
 
               <div className="lg:col-span-1">
                 <div className="bg-slate-50 rounded-lg p-4 sm:p-6 sticky top-6">
-                  <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-4">Réserver cette propriété</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-4">
+                    {isResidence ? 'Réserver cette résidence' : 'Contacter le propriétaire'}
+                  </h4>
 
                   <div className="space-y-3 sm:space-y-4 mb-6">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 text-sm sm:text-base">Loyer mensuel</span>
+                      <span className="text-slate-600 text-sm sm:text-base">
+                        {house.type === 'land' ? 'Prix de vente' : 'Loyer mensuel'}
+                      </span>
                       <span className="font-semibold text-base sm:text-lg">{house.price.toLocaleString()} FCFA</span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600 text-sm sm:text-base">Commission plateforme</span>
-                      <span className="font-semibold text-base sm:text-lg">1 000 FCFA</span>
-                    </div>
-
-                    <div className="border-t pt-3 sm:pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 text-sm sm:text-base">Total à payer maintenant</span>
-                        <span className="text-xl sm:text-2xl font-bold text-ci-orange-600">1 000 FCFA</span>
+                    {isResidence && (
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <p className="text-sm text-blue-800">
+                          Réservation gratuite. Payez directement le propriétaire.
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  <button
-                    onClick={handleBookingClick}
-                    className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white text-sm sm:text-base"
-                  >
-                    {getButtonContent()}
-                  </button>
+                  {isResidence ? (
+                    <button
+                      onClick={handleBookingClick}
+                      className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white text-sm sm:text-base"
+                    >
+                      {user ? (
+                        <>
+                          <Calendar className="w-5 h-5" />
+                          Réserver maintenant
+                        </>
+                      ) : (
+                        <>
+                          Se connecter pour réserver
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      {showPhone ? (
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
+                          <p className="text-sm text-green-800 mb-1">Numéro du propriétaire :</p>
+                          <p className="text-xl font-bold text-green-900 select-all">{ownerPhone}</p>
+                          <a href={`tel:${ownerPhone}`} className="text-sm text-green-700 hover:underline block mt-2">
+                            Appeler maintenant
+                          </a>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleShowPhone}
+                          disabled={loadingPhone}
+                          className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
+                        >
+                          {loadingPhone ? (
+                            'Chargement...'
+                          ) : (
+                            <>
+                              <Eye className="w-5 h-5" />
+                              {user ? 'Voir le numéro' : 'Se connecter pour voir le contact'}
+                            </>
+                          )}
+                        </button>
+                      )}
 
-                  <p className="text-xs text-slate-500 mt-3 text-center">
-                    Vous ne paierez que la commission de 1 000 FCFA maintenant.
-                    Le premier mois de loyer sera payé directement au propriétaire.
-                    Vous aurez les informations du propriétaire une fois le paiement effectué.
-                  </p>
+                      {!user && (
+                        <p className="text-xs text-slate-500 text-center">
+                          Connectez-vous pour accéder aux coordonnées
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {isResidence && (
+                    <p className="text-xs text-slate-500 mt-3 text-center">
+                      Après validation, vous recevrez les coordonnées du propriétaire.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

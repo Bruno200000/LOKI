@@ -42,6 +42,7 @@ export interface House {
 
   // Nouveaux champs ajoutés
   neighborhood?: string | null;
+  type?: 'residence' | 'house' | 'land' | 'shop'; // Added type field
   property_type?: string | null;
   furnished?: boolean | null;
   floor?: number | null;
@@ -84,6 +85,9 @@ export interface Booking {
   commission_fee?: number;
   monthly_rent: number;
   notes?: string | null;
+  tenant_name?: string | null;
+  tenant_phone?: string | null;
+  reservation_dates?: string[] | null;
   created_at: string;
 
   // Joined profile and house information
@@ -101,6 +105,7 @@ export interface Booking {
     title: string;
     address: string;
     city: string;
+    type?: string | null;
   } | null;
 }
 

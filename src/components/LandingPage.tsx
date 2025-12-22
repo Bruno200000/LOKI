@@ -186,19 +186,16 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         </div>
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center max-w-4xl mx-auto mb-16 animate-fade-in">
-            <div className="inline-flex items-center bg-ci-green-50 text-ci-green-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-ci-green-500 rounded-full mr-2 animate-pulse"></span>
-              Plateforme de location immobilière en Côte d'Ivoire
-            </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight animate-slide-up">
               Arrêtez de perdre des heures.
               <br />
               <span className="text-ci-green-600">
-                À trouver votre maison.
+                À trouver votre résidence, maison, terrain, magasin…
               </span>
             </h1>
             <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto animate-slide-up" style={{animationDelay: '0.1s'}}>
-              Connectez propriétaires et locataires en quelques clics. Gérez vos biens, réservations et paiements en toute simplicité.
+              Connectez propriétaires et locataires en quelques clics. Gérez vos biens et réservations.
+              Mise en relation directe, sans paiement côté utilisateur.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{animationDelay: '0.2s'}}>
               <button
@@ -332,18 +329,18 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
             <div className="flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 bg-ci-green-500 rounded-xl mb-4 lg:mb-6">
               <Shield className="h-6 w-6 lg:h-7 lg:w-7 text-white" />
             </div>
-            <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2 lg:mb-3">Paiements sécurisés</h3>
+            <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2 lg:mb-3">Mise en relation sécurisée</h3>
             <p className="text-slate-600 leading-relaxed mb-3 lg:mb-4 text-sm lg:text-base">
-              Finalisez vos transactions en toute sécurité avec suivi automatique des paiements et commissions.
+              Propriétaires et locataires se connectent en toute sécurité. Aucun paiement requis côté utilisateur; frais fixes réglés par le propriétaire après transaction réussie.
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center text-slate-500">
                 <CheckCircle className="h-4 w-4 text-ci-green-500 mr-2 flex-shrink-0" />
-                Mobile money intégré
+                Numéro du propriétaire partagé après réservation
               </div>
               <div className="flex items-center text-slate-500">
                 <CheckCircle className="h-4 w-4 text-ci-green-500 mr-2 flex-shrink-0" />
-                Historique complet
+                Suivi des réservations et frais propriétaires
               </div>
             </div>
           </div>
@@ -367,7 +364,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
             </div>
             <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">
               <span className="bg-gradient-to-r from-ci-orange-600 via-ci-green-600 to-blue-600 bg-clip-text text-transparent">
-                Maisons en Location
+                Offres immobilières: résidences, maisons, terrains, magasins
               </span>
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">

@@ -1,7 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase, House, IVORIAN_CITIES } from '../../lib/supabase';
+import { supabase, House } from '../../lib/supabase';
 import { X, AlertCircle, CheckCircle, Upload, Loader } from 'lucide-react';
+
+const BOUAKE_NEIGHBORHOODS = [
+  "Aéroport",
+  "Ahougnanssou",
+  "Air France 1",
+  "Air France 2",
+  "Air France 3",
+  "Allokokro",
+  "Attienkro",
+  "Beaufort",
+  "Belleville 1",
+  "Belleville 2",
+  "Broukro 1",
+  "Broukro 2",
+  "Camp Militaire",
+  "Commerce",
+  "Dar-es-Salam 1",
+  "Dar-es-Salam 2",
+  "Dar-es-Salam 3",
+  "Dougouba",
+  "Gonfreville",
+  "Houphouët-Ville",
+  "IDESSA",
+  "Kamounoukro",
+  "Kanakro",
+  "Kennedy",
+  "Koko",
+  "Kodiakoffikro",
+  "Konankankro",
+  "Liberté",
+  "Lycée Municipal",
+  "Mamianou",
+  "N’Dakro",
+  "N’Gattakro",
+  "N’Gouatanoukro",
+  "Niankoukro",
+  "Nimbo",
+  "Sokoura",
+  "Tièrèkro",
+  "Tolla Kouadiokro",
+  "Zone Industrielle",
+];
 
 interface HouseFormProps {
   house?: House | null;
@@ -24,7 +66,8 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
     image_url: '',
     video_url: '',
     virtual_tour_url: '',
-    city: '',
+    city: 'Bouaké',
+    neighborhood: '',
     photos: [] as string[],
 
     // Caractéristiques de base
@@ -61,7 +104,8 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
         image_url: house.image_url || '',
         video_url: house.video_url || '',
         virtual_tour_url: house.virtual_tour_url || '',
-        city: house.city || '',
+        city: house.city || 'Bouaké',
+        neighborhood: (house as any).neighborhood || '',
         photos: house.photos || [],
 
         // Caractéristiques de base
@@ -217,6 +261,7 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
         video_url: formData.video_url || null,
         virtual_tour_url: formData.virtual_tour_url || null,
         city: formData.city || null,
+        neighborhood: formData.neighborhood || null,
         photos: formData.photos.length > 0 ? formData.photos : null,
 
         // Caractéristiques de base
@@ -342,21 +387,34 @@ export const HouseForm = ({ house, onClose }: HouseFormProps): React.JSX.Element
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Ville
+                  Ville (Bouaké)
                 </label>
                 <select
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  required
                 >
-                  <option value="">Sélectionner une ville</option>
-                  {IVORIAN_CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
+                  <option value="Bouaké">Bouaké</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Quartier (Bouaké) *
+              </label>
+              <select
+                value={formData.neighborhood}
+                onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                required
+              >
+                <option value="">Sélectionner un quartier</option>
+                {BOUAKE_NEIGHBORHOODS.map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+              </select>
             </div>
 
             <div>
