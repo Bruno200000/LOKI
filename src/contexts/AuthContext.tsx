@@ -8,7 +8,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant', phone: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant', phone: string, ownerType?: 'particulier' | 'agent', mainActivityNeighborhood?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -146,7 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string,
     fullName: string,
     role: 'owner' | 'tenant',
-    phone: string
+    phone: string,
+    ownerType?: 'particulier' | 'agent',
+    mainActivityNeighborhood?: string
   ) => {
     // Validation des entrées
     const emailValidation = SecurityUtils.validateEmail(email);
@@ -194,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
-      // Créer ou mettre à jour immédiatement le profil avec le numéro de téléphone
+      // Créer ou mettre à jour immédiatement le profil avec le numéro de téléphone et les champs propriétaire
       await supabase
         .from('profiles')
         .upsert(
@@ -204,6 +206,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role,
             email: sanitizedEmail,
             phone: sanitizedPhone,
+            owner_type: role === 'owner' ? ownerType : null,
+            main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
           },
           { onConflict: 'id' }
         );

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { House, supabase } from '../../lib/supabase';
-import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight, Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { ContactModal } from './ContactModal';
 
 interface PropertyDetailsModalProps {
   house: House;
@@ -12,7 +13,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
   const { user } = useAuth();
 
   // Fonction pour générer un nombre de personnes regardant basé sur l'ID de la propriété
-  const getViewersCount = (propertyId: number) => {
+  const getViewersCount = (propertyId: string) => {
     // Convertir en string pour le hash
     const idString = propertyId.toString();
     // Utilise l'ID pour créer un nombre cohérent mais variable par propriété
@@ -44,41 +45,44 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
     setCurrentImageIndex(index);
   };
 
-  // State for owner phone
-  const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
-  const [showPhone, setShowPhone] = useState(false);
-  const [loadingPhone, setLoadingPhone] = useState(false);
+  // State for contact modal
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [ownerInfo, setOwnerInfo] = useState<{ name: string; phone: string } | null>(null);
 
-  // Fetch owner phone
-  const handleShowPhone = async () => {
+  // Fetch owner info for contact modal
+  const handleContactClick = async () => {
     if (!user) {
       sessionStorage.setItem('returnToProperty', window.location.href);
       window.location.href = '/?login=true';
       return;
     }
 
-    if (ownerPhone) {
-      setShowPhone(true);
+    if (ownerInfo) {
+      setShowContactModal(true);
       return;
     }
 
-    setLoadingPhone(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('full_name, phone')
         .eq('id', house.owner_id)
         .single();
 
       if (error) throw error;
-      setOwnerPhone(data?.phone || 'Non disponible');
-      setShowPhone(true);
+
+      setOwnerInfo({
+        name: data?.full_name || 'Nom non disponible',
+        phone: data?.phone || 'Non disponible'
+      });
+      setShowContactModal(true);
     } catch (err) {
-      console.error('Error fetching owner phone:', err);
-      setOwnerPhone('Non disponible');
-      setShowPhone(true);
-    } finally {
-      setLoadingPhone(false);
+      console.error('Error fetching owner info:', err);
+      setOwnerInfo({
+        name: 'Nom non disponible',
+        phone: 'Non disponible'
+      });
+      setShowContactModal(true);
     }
   };
 
@@ -365,12 +369,12 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                       </div>
                     )}
 
-                    {house.property_type && (
+                    {house.type && (
                       <div className="flex items-center gap-2">
                         <HomeIcon className="w-5 h-5 text-slate-600" />
                         <div>
                           <div className="font-medium text-slate-900">Type de propriété</div>
-                          <div className="text-sm text-slate-600">{house.property_type}</div>
+                          <div className="text-sm text-slate-600">{house.type}</div>
                         </div>
                       </div>
                     )}
@@ -607,30 +611,13 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                     </button>
                   ) : (
                     <div className="space-y-3">
-                      {showPhone ? (
-                        <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-                          <p className="text-sm text-green-800 mb-1">Numéro du propriétaire :</p>
-                          <p className="text-xl font-bold text-green-900 select-all">{ownerPhone}</p>
-                          <a href={`tel:${ownerPhone}`} className="text-sm text-green-700 hover:underline block mt-2">
-                            Appeler maintenant
-                          </a>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleShowPhone}
-                          disabled={loadingPhone}
-                          className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
-                        >
-                          {loadingPhone ? (
-                            'Chargement...'
-                          ) : (
-                            <>
-                              <Eye className="w-5 h-5" />
-                              {user ? 'Voir le numéro' : 'Se connecter pour voir le contact'}
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={handleContactClick}
+                        className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
+                      >
+                        <Phone className="w-5 h-5" />
+                        {user ? 'Voir le numéro du propriétaire' : 'Se connecter pour voir le contact'}
+                      </button>
 
                       {!user && (
                         <p className="text-xs text-slate-500 text-center">
@@ -651,6 +638,22 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
           </div>
         </div>
       </div>
+      {/* Add ContactModal */}
+      {showContactModal && ownerInfo && (
+        <>
+          <ContactModal
+            isOpen={showContactModal}
+            onClose={() => setShowContactModal(false)}
+            houseId={house.id}
+            ownerId={house.owner_id}
+            propertyType={house.type}
+            neighborhood={house.neighborhood || house.location}
+            ownerName={ownerInfo.name}
+          />
+          {/* Background overlay */}
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowContactModal(false)} />
+        </>
+      )}
     </>
   );
 };

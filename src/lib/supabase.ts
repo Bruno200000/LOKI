@@ -15,6 +15,8 @@ export interface Profile {
   phone?: string | null;
   city?: string | null;
   address?: string | null;
+  owner_type?: 'particulier' | 'agent' | null;
+  main_activity_neighborhood?: string | null;
   created_at: string;
 }
 
@@ -35,7 +37,7 @@ export interface House {
   city: string;
   neighborhood?: string | null;
   area_sqm?: number | null;
-  
+
   // Médias
   image_url?: string | null;
   video_url?: string | null;
@@ -80,21 +82,21 @@ export interface House {
   has_showcase?: boolean | null;
   has_ac?: boolean | null;
   has_security_system?: boolean | null;
-  
+
   // Informations financières et conditions
   deposit_amount?: number | null;
   agency_fees?: number | null;
   utilities_included?: boolean | null;
   utilities_amount?: number | null;
-  
+
   // Disponibilité et conditions
   availability_date?: string | null;
   minimum_rental_period?: number | null;
-  
+
   // Règles
   pets_allowed?: boolean | null;
   smoking_allowed?: boolean | null;
-  
+
   // Localisation avancée
   proximity_transport?: string | null;
   proximity_schools?: string | null;
@@ -103,7 +105,7 @@ export interface House {
 }
 
 export interface Booking {
-  id: number; // Changed from string to number to match bigint in DB
+  id: string; // Changed back to string to match UUID in DB
   house_id: number;
   tenant_id: string;
   owner_id: string;
@@ -130,7 +132,7 @@ export interface Booking {
     full_name: string | null;
   } | null;
   house_info?: {
-    id: number;
+    id: string;
     title: string;
     address: string;
     city: string;
@@ -140,7 +142,7 @@ export interface Booking {
 
 export interface Payment {
   id: string;
-  booking_id: number;
+  booking_id: string;
   amount: number;
   payment_type: 'commission' | 'rent' | 'deposit';
   payment_method?: 'wave' | 'orange_money' | 'moov_money' | 'cash' | 'pending';
@@ -150,6 +152,33 @@ export interface Payment {
   paid_to?: string;
   created_at: string;
   completed_at?: string;
+}
+
+export interface PropertyContact {
+  id: number;
+  house_id: number;
+  owner_id: string;
+  tenant_id?: string | null;
+  tenant_name: string;
+  tenant_phone: string;
+  property_type: string;
+  neighborhood: string;
+  owner_name: string;
+  status: 'contact_initiated' | 'reservation_made' | 'rental_confirmed';
+  contact_date: string;
+  created_at: string;
+  // Joined information
+  house_info?: {
+    id: string;
+    title: string;
+    type: string;
+    city: string;
+  } | null;
+  owner_profile?: {
+    id: string;
+    full_name: string | null;
+    phone: string | null;
+  } | null;
 }
 
 export const IVORIAN_CITIES = [

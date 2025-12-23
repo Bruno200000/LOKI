@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users, Phone } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users, Phone, MapPin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface RegisterProps {
@@ -14,6 +14,8 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'owner' | 'tenant'>('tenant');
+  const [ownerType, setOwnerType] = useState<'particulier' | 'agent'>('particulier');
+  const [mainActivityNeighborhood, setMainActivityNeighborhood] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,7 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
     }
 
     try {
-      await signUp(email, password, fullName, role, phone);
+      await signUp(email, password, fullName, role, phone, ownerType, mainActivityNeighborhood);
       setSuccess('Compte créé avec succès ! Vérifiez votre email et cliquez sur le lien de confirmation. Vous serez ensuite redirigé vers votre tableau de bord.');
       setLoading(false);
       // Ne pas vider les champs pour permettre à l'utilisateur de voir le message de succès
@@ -208,6 +210,63 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                 </button>
               </div>
             </div>
+
+            {role === 'owner' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    Type de propriétaire
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setOwnerType('particulier')}
+                      className={`p-3 border-2 rounded-lg transition-all ${
+                        ownerType === 'particulier'
+                          ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <User className="w-5 h-5 mx-auto mb-1" />
+                      <div className="font-semibold text-sm">Particulier</div>
+                      <div className="text-xs text-slate-600 mt-1">Propriétaire individuel</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOwnerType('agent')}
+                      className={`p-3 border-2 rounded-lg transition-all ${
+                        ownerType === 'agent'
+                          ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <Home className="w-5 h-5 mx-auto mb-1" />
+                      <div className="font-semibold text-sm">Agent</div>
+                      <div className="text-xs text-slate-600 mt-1">Agent immobilier</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="mainActivityNeighborhood" className="block text-sm font-medium text-slate-700 mb-2">
+                    Quartier principal d'activité
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      id="mainActivityNeighborhood"
+                      type="text"
+                      value={mainActivityNeighborhood}
+                      onChange={(e) => setMainActivityNeighborhood(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition"
+                      placeholder="Ex: Cocody, Plateau, Yopougon..."
+                      required={role === 'owner'}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"

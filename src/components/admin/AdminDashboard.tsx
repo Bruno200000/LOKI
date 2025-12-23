@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Home, Users, DollarSign, Calendar, LogOut, TrendingUp, Trash2, Eye, BarChart3 } from 'lucide-react';
+import { supabase, PropertyContact } from '../../lib/supabase';
+import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle } from 'lucide-react';
 
 interface Stats {
   totalOwners: number;
   totalTenants: number;
   totalHouses: number;
   availableHouses: number;
+  occupancyRate: number;
   totalBookings: number;
   activeBookings: number;
   totalCommissions: number;
@@ -57,15 +58,14 @@ interface ChartData {
   color: string;
 }
 
-
-
 export const AdminDashboard: React.FC = () => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
   const [stats, setStats] = useState<Stats>({
     totalOwners: 0,
     totalTenants: 0,
     totalHouses: 0,
     availableHouses: 0,
+    occupancyRate: 0,
     totalBookings: 0,
     activeBookings: 0,
     totalCommissions: 0,
@@ -74,16 +74,24 @@ export const AdminDashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [propertyContacts, setPropertyContacts] = useState<PropertyContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics'>('overview');
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
-    fetchStats();
-    fetchTransactions();
-    fetchUsers();
-    fetchBookingsWithNames();
+    const fetchData = async () => {
+      await Promise.all([
+        fetchStats(),
+        fetchTransactions(),
+        fetchUsers(),
+        fetchBookingsWithNames(),
+        fetchPropertyContacts()
+      ]);
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   const fetchStats = async () => {
@@ -98,62 +106,64 @@ export const AdminDashboard: React.FC = () => {
 
       if (profilesResult.error) {
         console.error('❌ Erreur profiles:', profilesResult.error);
-        throw profilesResult.error;
       }
       if (housesResult.error) {
         console.error('❌ Erreur houses:', housesResult.error);
-        throw housesResult.error;
       }
       if (bookingsResult.error) {
         console.error('❌ Erreur bookings:', bookingsResult.error);
-        console.log('Bookings result:', bookingsResult);
-        console.log('Bookings data:', bookingsResult.data);
-        console.log('Bookings error:', bookingsResult.error);
-        throw bookingsResult.error;
       }
       if (paymentsResult.error) {
         console.error('❌ Erreur payments:', paymentsResult.error);
-        throw paymentsResult.error;
       }
 
       const profiles = profilesResult.data || [];
       const houses = housesResult.data || [];
-      const bookingsData = bookingsResult.data || [];
+      const bookings = bookingsResult.data || [];
       const payments = paymentsResult.data || [];
 
-      console.log('📊 Données récupérées:');
-      console.log('- Profiles:', profiles.length);
-      console.log('- Houses:', houses.length);
-      console.log('- Bookings:', bookingsData.length);
-      console.log('- Payments:', payments.length);
-
-      const owners = profiles.filter((p) => p.role === 'owner').length;
-      const tenants = profiles.filter((p) => p.role === 'tenant').length;
-      const admins = profiles.filter((p) => p.role === 'admin').length;
       const totalHouses = houses.length;
-      const available = houses.filter((h) => h.status === 'available').length;
-      const totalBookings = bookingsData.length;
-      const confirmedBookings = bookingsData.filter((b) => b.status === 'confirmed').length;
-      const totalComm = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const availableHouses = houses.filter(h => h.status === 'available').length;
+      const takenHouses = houses.filter(h => h.status === 'taken').length;
+
+      const occupancyRate = totalHouses > 0 ? Math.round((takenHouses / totalHouses) * 100) : 0;
+
+      const totalOwners = profiles.filter(p => p.role === 'owner').length;
+      const totalTenants = profiles.filter(p => p.role === 'tenant').length;
+
+      const totalBookings = bookings.length;
+      const activeBookings = bookings.filter(b => b.status === 'confirmed').length;
+
+      const totalCommissions = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const activeCommissions = payments.filter(p => p.status === 'pending').length;
 
       setStats({
-        totalOwners: owners,
-        totalTenants: tenants,
+        totalOwners,
+        totalTenants,
         totalHouses,
-        availableHouses: available,
+        availableHouses,
+        occupancyRate,
         totalBookings,
-        activeBookings: confirmedBookings,
-        totalCommissions: totalComm,
-        activeCommissions: totalComm,
+        activeBookings,
+        totalCommissions,
+        activeCommissions,
       });
 
       setChartData([
-        { name: 'Propriétaires', value: owners, color: '#3B82F6' },
-        { name: 'Locataires', value: tenants, color: '#10B981' },
-        { name: 'Administrateurs', value: admins, color: '#F59E0B' },
+        { name: 'Propriétaires', value: totalOwners, color: '#3B82F6' },
+        { name: 'Locataires', value: totalTenants, color: '#22C55E' },
       ]);
 
-      setTransactions(payments.slice(0, 20) || []);
+      console.log('✅ Stats updated:', {
+        totalOwners,
+        totalTenants,
+        totalHouses,
+        availableHouses,
+        totalBookings,
+        activeBookings,
+        totalCommissions,
+        activeCommissions,
+      });
     } catch (error) {
       console.error('❌ Erreur fetchStats:', error);
     }
@@ -161,19 +171,20 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchTransactions = async () => {
     try {
+      console.log('🔍 Récupération des transactions...');
       const { data, error } = await supabase
         .from('payments')
         .select('*')
-        .eq('payment_type', 'commission')
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setTransactions(data || []);
+      if (error) {
+        console.error('❌ Erreur transactions:', error);
+      } else {
+        console.log('✅ Transactions récupérées:', data?.length);
+        setTransactions(data || []);
+      }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
+      console.error('❌ Erreur fetchTransactions:', error);
     }
   };
 
@@ -183,22 +194,19 @@ export const AdminDashboard: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
-          id,
-          full_name,
-          role,
-          created_at,
-          phone,
-          city
+          *,
+          auth_users (
+            email
+          )
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Erreur fetchUsers:', error);
-        throw error;
+      } else {
+        console.log('✅ Utilisateurs récupérés:', data?.length);
+        setUsers(data || []);
       }
-
-      console.log('✅ Utilisateurs récupérés:', data);
-      setUsers(data || []);
     } catch (error) {
       console.error('❌ Erreur fetchUsers:', error);
     }
@@ -260,13 +268,72 @@ export const AdminDashboard: React.FC = () => {
         ...booking,
         tenant_profile: profilesData?.find(p => p.id === booking.tenant_id),
         owner_profile: profilesData?.find(p => p.id === booking.owner_id),
-        house_info: housesData?.find(h => h.id === booking.house_id)
-      }));
+        house_info: housesData?.find(h => h.id === booking.house_id),
+      })) || [];
 
       console.log('✅ Réservations avec noms:', bookingsWithNames);
-      setBookings(bookingsWithNames || []);
+      setBookings(bookingsWithNames);
     } catch (error) {
       console.error('❌ Erreur fetchBookingsWithNames:', error);
+    }
+  };
+
+  const fetchPropertyContacts = async () => {
+    try {
+      console.log('🔍 Récupération des contacts de propriétés...');
+
+      const { data, error } = await supabase
+        .from('property_contacts')
+        .select(`
+          *,
+          house_info:houses(id,title,type,city),
+          owner_profile:profiles!property_contacts_owner_id_fkey(id,full_name,phone)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPropertyContacts(data || []);
+    } catch (error) {
+      console.error('❌ Erreur fetchPropertyContacts:', error);
+    }
+  };
+
+  const updateContactStatus = async (contactId: number, newStatus: 'contact_initiated' | 'reservation_made' | 'rental_confirmed') => {
+    try {
+      const { error } = await supabase
+        .from('property_contacts')
+        .update({ status: newStatus })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      // If rental is confirmed, generate fee
+      if (newStatus === 'rental_confirmed') {
+        const contact = propertyContacts.find(c => c.id === contactId);
+        if (contact) {
+          const fee = contact.property_type === 'residence' ? 2000 : 5000; // FCFA
+
+          // Create payment record for the fee
+          await supabase
+            .from('payments')
+            .insert({
+              contact_id: contactId,
+              amount: fee,
+              payment_type: 'commission',
+              status: 'pending',
+              paid_by: contact.owner_id,
+              created_at: new Date().toISOString()
+            });
+
+          alert(`Frais de ${fee} FCFA générés pour cette location confirmée.`);
+        }
+      }
+
+      // Refresh contacts data
+      await fetchPropertyContacts();
+    } catch (error) {
+      console.error('Error updating contact status:', error);
+      alert('Erreur lors de la mise à jour du statut');
     }
   };
 
@@ -316,29 +383,24 @@ export const AdminDashboard: React.FC = () => {
               <div className="w-10 h-10 bg-ci-orange-600 rounded-lg flex items-center justify-center">
                 <Home className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">LOKI</h1>
-                <p className="text-xs text-slate-600">Administrateur</p>
-              </div>
+              <span className="text-xl font-bold text-slate-900">LOKI</span>
             </a>
             <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-600">
+                {profile?.full_name} ({profile?.role})
+              </span>
               <button
                 onClick={goToPublicSite}
-                className="flex items-center gap-2 px-4 py-2 bg-ci-orange-600 text-white rounded-lg hover:bg-ci-orange-700 transition-colors"
+                className="text-sm text-ci-orange-600 hover:text-ci-orange-700 font-medium"
               >
-                <Eye className="w-4 h-4" />
-                Aller sur le site
+                Voir le site public
               </button>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-slate-900">{profile?.full_name}</p>
-                <p className="text-xs text-slate-600">{user?.email}</p>
-              </div>
               <button
                 onClick={signOut}
-                className="p-2 hover:bg-slate-100 rounded-lg transition"
-                title="Déconnexion"
+                className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800 font-medium"
               >
-                <LogOut className="w-5 h-5 text-slate-600" />
+                <LogOut className="w-4 h-4" />
+                Déconnexion
               </button>
             </div>
           </div>
@@ -346,617 +408,603 @@ export const AdminDashboard: React.FC = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Tableau de Bord Admin</h1>
-          <p className="text-slate-600">Vue d'ensemble de la plateforme LOKI</p>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="mb-8">
-          <nav className="flex space-x-8 border-b border-slate-200">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-ci-orange-600 text-ci-orange-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 inline mr-2" />
-              Vue d'ensemble
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'users'
-                  ? 'border-ci-orange-600 text-ci-orange-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              Utilisateurs ({users.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'bookings'
-                  ? 'border-ci-orange-600 text-ci-orange-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <Calendar className="w-4 h-4 inline mr-2" />
-              Réservations ({bookings.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'analytics'
-                  ? 'border-ci-orange-600 text-ci-orange-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 inline mr-2" />
-              Analytique
-            </button>
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ci-orange-600"></div>
+            <span className="ml-3 text-slate-600">Chargement...</span>
+          </div>
+        ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600">Propriétaires</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalOwners}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600">Locataires</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalTenants}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600">Maisons</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
-                    <p className="text-xs text-ci-orange-600 mt-1">
-                      {stats.availableHouses} disponibles
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <Home className="w-6 h-6 text-amber-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600">Réservations</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
-                    <p className="text-xs text-ci-orange-600 mt-1">
-                      {stats.activeBookings} actives
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-              </div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Tableau de Bord Admin</h1>
+              <p className="text-slate-600">Vue d'ensemble de la plateforme LOKI</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-ci-green-500 to-ci-orange-600 p-8 rounded-xl shadow-lg text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-ci-green-100 text-sm">Commissions Totales</p>
-                    <p className="text-4xl font-bold mt-2">
-                      {stats.totalCommissions.toLocaleString()} FCFA
-                    </p>
-                  </div>
-                  <div className="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-8 h-8" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-ci-green-100">
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="text-sm">Depuis le lancement</span>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 rounded-xl shadow-lg text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-blue-100 text-sm">Commissions Actives</p>
-                    <p className="text-4xl font-bold mt-2">
-                      {stats.activeCommissions.toLocaleString()} FCFA
-                    </p>
-                  </div>
-                  <div className="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-8 h-8" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-blue-100">
-                  <Calendar className="w-5 h-5" />
-                  <span className="text-sm">Réservations en cours</span>
-                </div>
-              </div>
+            {/* Navigation Tabs */}
+            <div className="mb-8">
+              <nav className="flex space-x-8 border-b border-slate-200">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'overview'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <BarChart3 className="w-4 h-4 inline mr-2" />
+                  Vue d'ensemble
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'users'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <Users className="w-4 h-4 inline mr-2" />
+                  Utilisateurs ({users.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('bookings')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'bookings'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <Calendar className="w-4 h-4 inline mr-2" />
+                  Réservations ({bookings.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('contacts')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'contacts'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <Phone className="w-4 h-4 inline mr-2" />
+                  Contacts ({propertyContacts.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'analytics'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <BarChart3 className="w-4 h-4 inline mr-2" />
+                  Analytique
+                </button>
+              </nav>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900">Transactions Récentes</h2>
-                <p className="text-sm text-slate-600 mt-1">
-                  Dernières commissions collectées
-                </p>
-              </div>
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-600">Propriétaires</p>
+                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalOwners}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Users className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                  </div>
 
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-ci-orange-600"></div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-600">Locataires</p>
+                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalTenants}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Users className="w-6 h-6 text-green-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-600">Maisons</p>
+                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
+                        <p className="text-xs text-ci-orange-600 mt-1">
+                          {stats.availableHouses} disponibles • {stats.occupancyRate}% occupées
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                        <Home className="w-6 h-6 text-amber-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-600">Réservations</p>
+                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {stats.activeBookings} actives
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-purple-600" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-600">Commissions</p>
+                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalCommissions} FCFA</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          {stats.activeCommissions} en attente
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-ci-orange-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-ci-orange-600" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : transactions.length === 0 ? (
-                <div className="p-12 text-center">
-                  <DollarSign className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-600">Aucune transaction</p>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Utilisateurs Récents</h3>
+                    <div className="space-y-4">
+                      {users.slice(0, 5).map((user) => (
+                        <div key={user.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                              <User className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-slate-900">{user.full_name}</p>
+                              <p className="text-sm text-slate-500">{user.role}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.role === 'owner' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                            {user.role === 'owner' ? 'Propriétaire' : 'Locataire'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Transactions Récentes</h3>
+                    <div className="space-y-4">
+                      {transactions.slice(0, 5).map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-900">{transaction.amount} FCFA</p>
+                            <p className="text-sm text-slate-500">{transaction.payment_type}</p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${transaction.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                            {transaction.status === 'completed' ? 'Complété' : 'En attente'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ) : (
+              </>
+            )}
+
+            {activeTab === 'users' && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-xl font-bold text-slate-900">Gestion des Utilisateurs</h2>
+                  <p className="text-slate-600 mt-1">Liste de tous les utilisateurs inscrits</p>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                          Transaction
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                          Montant
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                          Méthode
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                          Statut
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                          Date
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Utilisateur</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Rôle</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ville</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date d'inscription</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {transactions.map((transaction) => (
-                        <tr key={transaction.id} className="hover:bg-slate-50">
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-slate-900">
-                              {String(transaction.id).slice(0, 8)}...
-                            </div>
-                            <div className="text-xs text-slate-600">Commission</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-semibold text-ci-orange-600">
-                              {transaction.amount.toLocaleString()} FCFA
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-slate-900 capitalize">
-                              {transaction.payment_method?.replace('_', ' ') || 'N/A'}
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                                <User className="w-4 h-4 text-slate-600" />
+                              </div>
+                              <div className="ml-3">
+                                <p className="font-medium text-slate-900">{user.full_name}</p>
+                                <p className="text-sm text-slate-500">ID: {user.id}</p>
+                              </div>
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {user.auth_users?.[0]?.email || 'N/A'}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                transaction.status === 'completed'
-                                  ? 'bg-green-100 text-green-800'
-                                  : transaction.status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {transaction.status === 'completed'
-                                ? 'Complété'
-                                : transaction.status === 'pending'
-                                ? 'En attente'
-                                : 'Échoué'}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.role === 'owner' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                              }`}>
+                              {user.role === 'owner' ? 'Propriétaire' : 'Locataire'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                            {new Date(transaction.created_at).toLocaleDateString('fr-FR')}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {user.phone || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {user.city || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => deleteUser(user.id, user.auth_users?.[0]?.email || '')}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Supprimer
+                            </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {users.length === 0 && (
+                    <div className="text-center py-12">
+                      <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-600">Aucun utilisateur enregistré</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </>
-        )}
+              </div>
+            )}
 
-        {activeTab === 'users' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900">Gestion des Utilisateurs</h2>
-              <p className="text-sm text-slate-600 mt-1">
-                Liste de tous les utilisateurs inscrits sur la plateforme
-              </p>
-              {users.length === 0 && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    📝 Aucun utilisateur trouvé. Vérifiez que des utilisateurs sont inscrits dans la base de données.
-                  </p>
+            {activeTab === 'bookings' && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-xl font-bold text-slate-900">Gestion des Réservations</h2>
+                  <p className="text-slate-600 mt-1">Liste de toutes les réservations</p>
                 </div>
-              )}
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Utilisateur
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Rôle
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Téléphone
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Ville
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Inscrit le
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-slate-900">
-                          {user.full_name || 'N/A'}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          Email non disponible
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            user.role === 'admin'
-                              ? 'bg-red-100 text-red-800'
-                              : user.role === 'owner'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {user.role === 'admin'
-                            ? 'Administrateur'
-                            : user.role === 'owner'
-                            ? 'Propriétaire'
-                            : 'Locataire'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {user.phone || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {user.city || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => deleteUser(user.id, user.full_name || 'Utilisateur')}
-                          className="text-red-600 hover:text-red-900 p-1"
-                          title="Supprimer l'utilisateur"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'bookings' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900">Gestion des Réservations</h2>
-              <p className="text-sm text-slate-600 mt-1">
-                Liste de toutes les réservations effectuées sur la plateforme
-              </p>
-              {bookings.length === 0 && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    📝 Aucune réservation trouvée. Vérifiez que des réservations ont été créées dans la base de données.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Réservation
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Maison
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Locataire
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Propriétaire
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Période
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Loyer Mensuel
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Commission
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Statut
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                      Créée le
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {bookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-slate-900">
-                          {String(booking.id).slice(0, 8)}...
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          Réservation ID: {String(booking.id).slice(0, 8)}...
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {booking.house_info?.title || `Maison ${String(booking.house_id).slice(0, 8)}...`}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {booking.tenant_profile?.full_name || `${String(booking.tenant_id).slice(0, 8)}...`}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          {booking.tenant_profile?.full_name ? 'Locataire' : 'ID Locataire'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {booking.owner_profile?.full_name || `${String(booking.owner_id).slice(0, 8)}...`}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          {booking.owner_profile?.full_name ? 'Propriétaire' : 'ID Propriétaire'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-900">
-                          {new Date(booking.start_date).toLocaleDateString('fr-FR')}
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          {booking.move_in_date ? `→ ${new Date(booking.move_in_date).toLocaleDateString('fr-FR')}` : ''}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-ci-orange-600">
-                        {booking.monthly_rent.toLocaleString()} FCFA
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                        {booking.commission_fee.toLocaleString()} FCFA
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            booking.status === 'confirmed'
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Bien</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Locataire</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Propriétaire</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date début</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date emménagement</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Loyer mensuel</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {bookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{booking.house_info?.title || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">ID: {booking.house_id}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{booking.tenant_profile?.full_name || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">ID: {booking.tenant_id}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{booking.owner_profile?.full_name || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">ID: {booking.owner_id}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {new Date(booking.start_date).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {new Date(booking.move_in_date).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {booking.monthly_rent} FCFA
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {booking.commission_fee} FCFA
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${booking.status === 'confirmed'
                               ? 'bg-green-100 text-green-800'
                               : booking.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                              }`}>
+                              {booking.status === 'confirmed' ? 'Confirmée' :
+                                booking.status === 'pending' ? 'En attente' : 'Annulée'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {bookings.length === 0 && (
+                    <div className="text-center py-12">
+                      <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-600">Aucune réservation enregistrée</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'contacts' && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                  <h2 className="text-xl font-bold text-slate-900">Suivi des Contacts</h2>
+                  <p className="text-slate-600 mt-1">Historique des contacts initiés par les locataires</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Bien</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Quartier</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Locataire</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Propriétaire</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {propertyContacts.map((contact) => (
+                        <tr key={contact.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {new Date(contact.contact_date).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{contact.house_info?.title || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">ID: {contact.house_id}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                              {contact.property_type === 'residence' ? 'Résidence' :
+                                contact.property_type === 'house' ? 'Maison' :
+                                  contact.property_type === 'land' ? 'Terrain' :
+                                    contact.property_type === 'shop' ? 'Magasin' : contact.property_type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-slate-400" />
+                              {contact.neighborhood || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{contact.tenant_name}</p>
+                              <p className="text-slate-500 text-xs">{contact.tenant_phone}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-slate-400" />
+                              {contact.tenant_phone}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div>
+                              <p className="font-medium">{contact.owner_name}</p>
+                              <p className="text-slate-500 text-xs">{contact.owner_profile?.phone}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${contact.status === 'contact_initiated'
                               ? 'bg-yellow-100 text-yellow-800'
-                              : booking.status === 'cancelled'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800'
+                              : contact.status === 'reservation_made'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                              }`}>
+                              {contact.status === 'contact_initiated' ? 'Contact initié' :
+                                contact.status === 'reservation_made' ? 'Réservation effectuée' :
+                                  'Location confirmée'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            <div className="flex items-center gap-2">
+                              {contact.status === 'contact_initiated' && (
+                                <button
+                                  onClick={() => updateContactStatus(contact.id, 'reservation_made')}
+                                  className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                                >
+                                  Marquer réservation
+                                </button>
+                              )}
+                              {contact.status === 'reservation_made' && (
+                                <button
+                                  onClick={() => updateContactStatus(contact.id, 'rental_confirmed')}
+                                  className="text-green-600 hover:text-green-800 font-medium text-sm"
+                                >
+                                  Confirmer location
+                                </button>
+                              )}
+                              {contact.status === 'rental_confirmed' && (
+                                <span className="text-green-600 font-medium text-sm">
+                                  <CheckCircle className="w-4 h-4 inline mr-1" />
+                                  Confirmée
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {propertyContacts.length === 0 && (
+                    <div className="text-center py-12">
+                      <MessageCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-600">Aucun contact enregistré</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'analytics' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-slate-900">Répartition des Utilisateurs</h2>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setAnalyticsPeriod('week')}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'week'
+                          ? 'bg-ci-orange-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                           }`}
-                        >
-                          {booking.status === 'confirmed'
-                            ? 'Confirmée'
-                            : booking.status === 'pending'
-                            ? 'En attente'
-                            : booking.status === 'cancelled'
-                            ? 'Annulée'
-                            : booking.status || 'Inconnu'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {new Date(booking.created_at).toLocaleDateString('fr-FR')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'analytics' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Répartition des Utilisateurs</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setAnalyticsPeriod('week')}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      analyticsPeriod === 'week'
-                        ? 'bg-ci-orange-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    Semaine
-                  </button>
-                  <button
-                    onClick={() => setAnalyticsPeriod('month')}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      analyticsPeriod === 'month'
-                        ? 'bg-ci-orange-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    Mois
-                  </button>
-                  <button
-                    onClick={() => setAnalyticsPeriod('year')}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      analyticsPeriod === 'year'
-                        ? 'bg-ci-orange-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    Année
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <div className="space-y-4">
-                    {chartData.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm text-slate-600">{item.name}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-semibold text-slate-900">{item.value}</span>
-                          <span className="text-xs text-slate-500 ml-2">
-                            ({Math.round((item.value / chartData.reduce((sum, d) => sum + d.value, 0)) * 100)}%)
-                          </span>
-                        </div>
+                      >
+                        Semaine
+                      </button>
+                      <button
+                        onClick={() => setAnalyticsPeriod('month')}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'month'
+                          ? 'bg-ci-orange-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        Mois
+                      </button>
+                      <button
+                        onClick={() => setAnalyticsPeriod('year')}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'year'
+                          ? 'bg-ci-orange-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        Année
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <div className="space-y-4">
+                        {chartData.map((item) => (
+                          <div key={item.name} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="font-medium text-slate-900">{item.name}</span>
+                            </div>
+                            <span className="font-semibold text-slate-900">{item.value}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                    <div className="relative w-48 h-48">
+                      <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
+                        {chartData.map((item, index) => {
+                          const total = chartData.reduce((sum, d) => sum + d.value, 0);
+                          const percentage = (item.value / total) * 100;
+                          const offset = chartData.slice(0, index).reduce((sum, d) => sum + (d.value / total) * 100, 0);
+                          return (
+                            <circle
+                              key={item.name}
+                              cx="50"
+                              cy="50"
+                              r="20"
+                              fill="none"
+                              stroke={item.color}
+                              strokeWidth="15"
+                              strokeDasharray={`${percentage} ${100 - percentage}`}
+                              strokeDashoffset={100 - offset}
+                              className="transition-all duration-500"
+                            />
+                          );
+                        })}
+                      </svg>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-center">
-                  <div className="relative w-48 h-48">
-                    <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
-                      {chartData.map((item, index) => {
-                        const total = chartData.reduce((sum, d) => sum + d.value, 0);
-                        const percentage = (item.value / total) * 100;
-                        const offset = chartData.slice(0, index).reduce((sum, d) => sum + (d.value / total) * 100, 0);
-                        return (
-                          <circle
-                            key={item.name}
-                            cx="50"
-                            cy="50"
-                            r="20"
-                            fill="none"
-                            stroke={item.color}
-                            strokeWidth="15"
-                            strokeDasharray={`${percentage} ${100 - percentage}`}
-                            strokeDashoffset={100 - offset}
-                            className="transition-all duration-500"
-                          />
-                        );
-                      })}
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Statistiques {analyticsPeriod === 'week' ? 'hebdomadaires' : analyticsPeriod === 'month' ? 'mensuelles' : 'annuelles'}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Taux d'occupation</span>
-                    <span className="text-sm font-semibold">
-                      {stats.totalHouses > 0 ? Math.round(((stats.totalHouses - stats.availableHouses) / stats.totalHouses) * 100) : 0}%
-                    </span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                      Statistiques {analyticsPeriod === 'week' ? 'hebdomadaires' : analyticsPeriod === 'month' ? 'mensuelles' : 'annuelles'}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Taux d'occupation</span>
+                        <span className="text-sm font-semibold">
+                          {stats.totalHouses > 0 ? Math.round(((stats.totalHouses - stats.availableHouses) / stats.totalHouses) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                          Réservations {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {analyticsPeriod === 'week' ? Math.round(stats.totalBookings / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalBookings / 12) : stats.totalBookings}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Commission moyenne</span>
+                        <span className="text-sm font-semibold">
+                          {stats.totalBookings > 0 ? Math.round(stats.totalCommissions / stats.totalBookings) : 0} FCFA
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">
-                      Réservations {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {analyticsPeriod === 'week' ? Math.round(stats.totalBookings / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalBookings / 12) : stats.totalBookings}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Commission moyenne</span>
-                    <span className="text-sm font-semibold">
-                      {stats.totalBookings > 0 ? Math.round(stats.totalCommissions / stats.totalBookings) : 0} FCFA
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  Activité {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">
-                      Nouveaux utilisateurs ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
-                    </span>
-                    <span className="text-sm font-semibold text-green-600">
-                      +{analyticsPeriod === 'week' ? users.slice(0, 7).length : analyticsPeriod === 'month' ? users.slice(0, 30).length : users.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">
-                      Nouvelles maisons ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
-                    </span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      +{analyticsPeriod === 'week' ? Math.round(stats.totalHouses / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalHouses / 12) : stats.totalHouses}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">
-                      Transactions ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
-                    </span>
-                    <span className="text-sm font-semibold text-purple-600">
-                      +{analyticsPeriod === 'week' ? Math.round(transactions.length / 4) : analyticsPeriod === 'month' ? Math.round(transactions.length / 12) : transactions.length}
-                    </span>
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                      Activité {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                          Nouveaux utilisateurs ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                        </span>
+                        <span className="text-sm font-semibold text-green-600">
+                          +{analyticsPeriod === 'week' ? users.slice(0, 7).length : analyticsPeriod === 'month' ? users.slice(0, 30).length : users.length}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                          Nouvelles maisons ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                        </span>
+                        <span className="text-sm font-semibold text-blue-600">
+                          +{analyticsPeriod === 'week' ? Math.round(stats.totalHouses / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalHouses / 12) : stats.totalHouses}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">
+                          Transactions ({analyticsPeriod === 'week' ? '7j' : analyticsPeriod === 'month' ? '30j' : '365j'})
+                        </span>
+                        <span className="text-sm font-semibold text-purple-600">
+                          +{analyticsPeriod === 'week' ? Math.round(transactions.length / 4) : analyticsPeriod === 'month' ? Math.round(transactions.length / 12) : transactions.length}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

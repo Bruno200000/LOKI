@@ -103,7 +103,7 @@ const BookingFormPage: React.FC<{ houseId: string }> = ({ houseId }) => {
     <BookingForm
       house={house}
       onBack={() => window.history.back()}
-      onBookingSuccess={(_bookingId) => {}}
+      onBookingSuccess={(_bookingId) => { }}
     />
   );
 };
@@ -203,14 +203,14 @@ function AppContent() {
   }
 
   // Handle property details page
-  const propertyMatch = currentPath.match(/^\/property\/(\d+)$/);
+  const propertyMatch = currentPath.match(/^\/property\/([a-zA-Z0-9-]+)$/);
   if (propertyMatch) {
     const propertyId = propertyMatch[1];
     return <PropertyDetailsPage propertyId={propertyId} />;
   }
 
   // Handle booking form page
-  const bookingMatch = currentPath.match(/^\/booking\/(\d+)$/);
+  const bookingMatch = currentPath.match(/^\/booking\/([a-zA-Z0-9-]+)$/);
   if (bookingMatch) {
     const houseId = bookingMatch[1];
     return <BookingFormPage houseId={houseId} />;
