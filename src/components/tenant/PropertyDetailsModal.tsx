@@ -13,7 +13,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
   const { user } = useAuth();
 
   // Fonction pour générer un nombre de personnes regardant basé sur l'ID de la propriété
-  const getViewersCount = (propertyId: string) => {
+  const getViewersCount = (propertyId: number | string) => {
     // Convertir en string pour le hash
     const idString = propertyId.toString();
     // Utilise l'ID pour créer un nombre cohérent mais variable par propriété
@@ -616,7 +616,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                         className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
                       >
                         <Phone className="w-5 h-5" />
-                        {user ? 'Voir le numéro du propriétaire' : 'Se connecter pour voir le contact'}
+                        {user ? 'Contacter le propriétaire' : 'Se connecter pour contacter'}
                       </button>
 
                       {!user && (
@@ -647,7 +647,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
             houseId={house.id}
             ownerId={house.owner_id}
             propertyType={house.type}
-            neighborhood={house.neighborhood || house.location}
+            neighborhood={house.neighborhood || house.location || 'Quartier non précisé'}
             ownerName={ownerInfo.name}
           />
           {/* Background overlay */}

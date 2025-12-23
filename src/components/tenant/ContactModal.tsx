@@ -22,9 +22,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   neighborhood,
   ownerName
 }) => {
-  const { user } = useAuth();
-  const [tenantName, setTenantName] = useState('');
-  const [tenantPhone, setTenantPhone] = useState('');
+  const { user, profile } = useAuth();
+  const [tenantName, setTenantName] = useState(profile?.full_name || '');
+  const [tenantPhone, setTenantPhone] = useState(profile?.phone || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           tenant_name: tenantName,
           tenant_phone: tenantPhone,
           property_type: propertyType,
-          neighborhood: neighborhood,
+          neighborhood: neighborhood || 'Quartier non précisé',
           owner_name: ownerName,
           status: 'contact_initiated',
           contact_date: new Date().toISOString()
