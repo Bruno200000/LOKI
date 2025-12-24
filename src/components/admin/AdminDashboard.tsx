@@ -20,19 +20,24 @@ interface User {
   full_name: string;
   role: string;
   created_at: string;
+  email?: string;
   phone?: string;
   city?: string;
-  auth_users?: { email: string }[];
 }
 
 interface Transaction {
   id: string;
   booking_id: string;
+  contact_id?: string;
   amount: number;
   payment_type: string;
   payment_method: string;
   status: string;
   created_at: string;
+  paid_by: string;
+  payer_profile?: { full_name: string };
+  booking_info?: { house_info: { title: string } };
+  contact_info?: { house_info: { title: string } };
 }
 
 interface Booking {
@@ -76,7 +81,7 @@ export const AdminDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [propertyContacts, setPropertyContacts] = useState<PropertyContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics' | 'commissions'>('overview');
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<'week' | 'month' | 'year'>('month');
 
@@ -174,7 +179,12 @@ export const AdminDashboard: React.FC = () => {
       console.log('🔍 Récupération des transactions...');
       const { data, error } = await supabase
         .from('payments')
-        .select('*')
+        .select(`
+          *,
+          payer_profile:profiles!payments_paid_by_fkey(full_name),
+          booking_info:bookings(house_info:houses(title)),
+          contact_info:property_contacts(house_info:houses(title))
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -193,12 +203,7 @@ export const AdminDashboard: React.FC = () => {
       console.log('🔍 Récupération des utilisateurs...');
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          auth_users (
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -473,6 +478,16 @@ export const AdminDashboard: React.FC = () => {
                   <BarChart3 className="w-4 h-4 inline mr-2" />
                   Analytique
                 </button>
+                <button
+                  onClick={() => setActiveTab('commissions')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'commissions'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <DollarSign className="w-4 h-4 inline mr-2" />
+                  Commissions ({transactions.filter(t => t.payment_type === 'commission').length})
+                </button>
               </nav>
             </div>
 
@@ -629,7 +644,7 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            {user.auth_users?.[0]?.email || 'N/A'}
+                            {user.email || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.role === 'owner' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
@@ -648,7 +663,7 @@ export const AdminDashboard: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button
-                              onClick={() => deleteUser(user.id, user.auth_users?.[0]?.email || '')}
+                              onClick={() => deleteUser(user.id, user.email || '')}
                               className="text-red-600 hover:text-red-900"
                             >
                               Supprimer
@@ -1001,6 +1016,75 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'commissions' && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Suivi des Commissions</h2>
+                    <p className="text-slate-600 mt-1">Historique des commissions perçues par la plateforme</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500 uppercase font-semibold">Total Commissions</p>
+                    <p className="text-3xl font-bold text-ci-orange-600">{stats.totalCommissions} FCFA</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Payeur/Propriétaire</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Bien Concerné</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Montant</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Méthode</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {transactions
+                        .filter(t => t.payment_type === 'commission')
+                        .map((commission) => (
+                          <tr key={commission.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              {new Date(commission.created_at).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              {commission.payer_profile?.full_name || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              {commission.booking_info?.house_info?.title || commission.contact_info?.house_info?.title || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
+                              {commission.amount} FCFA
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 uppercase">
+                              {commission.payment_method || 'pending'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${commission.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : commission.status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                                }`}>
+                                {commission.status === 'completed' ? 'Payé' :
+                                  commission.status === 'pending' ? 'En attente' : commission.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {transactions.filter(t => t.payment_type === 'commission').length === 0 && (
+                    <div className="text-center py-12">
+                      <DollarSign className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-600">Aucune commission enregistrée</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
