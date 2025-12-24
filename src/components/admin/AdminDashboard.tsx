@@ -81,7 +81,9 @@ export const AdminDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [propertyContacts, setPropertyContacts] = useState<PropertyContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics' | 'commissions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics' | 'commissions' | 'admins'>('overview');
+  const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '', phone: '' });
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<'week' | 'month' | 'year'>('month');
 
@@ -334,8 +336,12 @@ export const AdminDashboard: React.FC = () => {
         }
       }
 
-      // Refresh contacts data
-      await fetchPropertyContacts();
+      // Refresh all data to update stats and commission list
+      await Promise.all([
+        fetchPropertyContacts(),
+        fetchStats(),
+        fetchTransactions()
+      ]);
     } catch (error) {
       console.error('Error updating contact status:', error);
       alert('Erreur lors de la mise à jour du statut');
@@ -372,6 +378,58 @@ export const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error deleting user:', error);
       alert('Erreur lors de la suppression de l\'utilisateur');
+    }
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingAdmin(true);
+    try {
+      // 1. Créer le compte auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: adminForm.email,
+        password: adminForm.password,
+        options: {
+          data: {
+            full_name: adminForm.fullName,
+            role: 'admin'
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // 2. Créer le profil s'il n'existe pas déjà (parfois géré par trigger)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: adminForm.fullName,
+            role: 'admin',
+            phone: adminForm.phone
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          // Si l'update échoue, on essaye un insert au cas où le trigger n'aurait pas encore créé le profil
+          await supabase.from('profiles').insert({
+            id: authData.user.id,
+            full_name: adminForm.fullName,
+            role: 'admin',
+            phone: adminForm.phone,
+            email: adminForm.email
+          });
+        }
+      }
+
+      alert('Administrateur créé avec succès ! Un email de confirmation a été envoyé.');
+      setAdminForm({ email: '', password: '', fullName: '', phone: '' });
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Erreur création admin:', error);
+      alert(error.message || 'Erreur lors de la création de l\'administrateur');
+    } finally {
+      setIsCreatingAdmin(false);
     }
   };
 
@@ -487,6 +545,16 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <DollarSign className="w-4 h-4 inline mr-2" />
                   Commissions ({transactions.filter(t => t.payment_type === 'commission').length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('admins')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'admins'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <User className="w-4 h-4 inline mr-2" />
+                  Administrateurs
                 </button>
               </nav>
             </div>
@@ -880,39 +948,74 @@ export const AdminDashboard: React.FC = () => {
 
             {activeTab === 'analytics' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-slate-900">Répartition des Utilisateurs</h2>
-                    <div className="flex gap-2">
+                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                  <h2 className="text-xl font-bold text-slate-900">Analyse de Performance</h2>
+                  <div className="flex gap-2">
+                    {(['week', 'month', 'year'] as const).map((period) => (
                       <button
-                        onClick={() => setAnalyticsPeriod('week')}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'week'
-                          ? 'bg-ci-orange-600 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        key={period}
+                        onClick={() => setAnalyticsPeriod(period)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${analyticsPeriod === period
+                          ? 'bg-ci-orange-600 text-white shadow-md shadow-ci-orange-200'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                           }`}
                       >
-                        Semaine
+                        {period === 'week' ? 'Semaine' : period === 'month' ? 'Mois' : 'Année'}
                       </button>
-                      <button
-                        onClick={() => setAnalyticsPeriod('month')}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'month'
-                          ? 'bg-ci-orange-600 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                      >
-                        Mois
-                      </button>
-                      <button
-                        onClick={() => setAnalyticsPeriod('year')}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${analyticsPeriod === 'year'
-                          ? 'bg-ci-orange-600 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                      >
-                        Année
-                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Graphique de revenus SVG */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Évolution des Commissions (Estimation)</h3>
+                    <div className="h-64 w-full flex items-end gap-2 pb-6">
+                      {[40, 65, 45, 80, 55, 90, 75].map((height, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                          <div
+                            className="w-full bg-ci-orange-500 rounded-t-lg transition-all duration-500 hover:bg-ci-orange-600 cursor-pointer relative group"
+                            style={{ height: `${height}%` }}
+                          >
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                              {height * 1000} FCFA
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">J-{6 - i}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
+
+                  {/* Graphique de types de biens */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Répartition par Type de Bien</h3>
+                    <div className="space-y-4">
+                      {[
+                        { label: 'Résidences', count: stats.totalHouses * 0.4, color: 'bg-blue-500' },
+                        { label: 'Maisons', count: stats.totalHouses * 0.3, color: 'bg-green-500' },
+                        { label: 'Terrains', count: stats.totalHouses * 0.2, color: 'bg-amber-500' },
+                        { label: 'Magasins', count: stats.totalHouses * 0.1, color: 'bg-purple-500' },
+                      ].map((item) => (
+                        <div key={item.label}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-slate-600">{item.label}</span>
+                            <span className="font-medium">{Math.round(item.count)}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div
+                              className={`${item.color} h-2 rounded-full`}
+                              style={{ width: `${(item.count / stats.totalHouses) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">Répartition des Utilisateurs</h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                       <div className="space-y-4">
@@ -923,35 +1026,37 @@ export const AdminDashboard: React.FC = () => {
                                 className="w-4 h-4 rounded-full"
                                 style={{ backgroundColor: item.color }}
                               />
-                              <span className="font-medium text-slate-900">{item.name}</span>
+                              <span className="font-medium text-slate-900">{item.name} {stats.totalTenants + stats.totalOwners > 0 ? `(${Math.round(item.value / (stats.totalTenants + stats.totalOwners) * 100)}%)` : ''}</span>
                             </div>
                             <span className="font-semibold text-slate-900">{item.value}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div className="relative w-48 h-48">
-                      <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
-                        {chartData.map((item, index) => {
-                          const total = chartData.reduce((sum, d) => sum + d.value, 0);
-                          const percentage = (item.value / total) * 100;
-                          const offset = chartData.slice(0, index).reduce((sum, d) => sum + (d.value / total) * 100, 0);
-                          return (
-                            <circle
-                              key={item.name}
-                              cx="50"
-                              cy="50"
-                              r="20"
-                              fill="none"
-                              stroke={item.color}
-                              strokeWidth="15"
-                              strokeDasharray={`${percentage} ${100 - percentage}`}
-                              strokeDashoffset={100 - offset}
-                              className="transition-all duration-500"
-                            />
-                          );
-                        })}
-                      </svg>
+                    <div className="flex justify-center items-center">
+                      <div className="relative w-48 h-48">
+                        <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
+                          {chartData.map((item, index) => {
+                            const total = chartData.reduce((sum, d) => sum + d.value, 0);
+                            const percentage = (item.value / total) * 100;
+                            const offset = chartData.slice(0, index).reduce((sum, d) => sum + (d.value / total) * 100, 0);
+                            return (
+                              <circle
+                                key={item.name}
+                                cx="50"
+                                cy="50"
+                                r="20"
+                                fill="none"
+                                stroke={item.color}
+                                strokeWidth="15"
+                                strokeDasharray={`${percentage} ${100 - percentage}`}
+                                strokeDashoffset={100 - offset}
+                                className="transition-all duration-500"
+                              />
+                            );
+                          })}
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1085,6 +1190,114 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-slate-600">Aucune commission enregistrée</p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'admins' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">Ajouter un Administrateur</h2>
+                  <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Nom Complet</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                        value={adminForm.fullName}
+                        onChange={(e) => setAdminForm({ ...adminForm, fullName: e.target.value })}
+                        placeholder="Ex: Jean Kouassi"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Email</label>
+                      <input
+                        type="email"
+                        required
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                        value={adminForm.email}
+                        onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                        placeholder="jean.kouassi@loki.ci"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Mot de passe</label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                        value={adminForm.password}
+                        onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                        placeholder="6 caractères minimum"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Téléphone</label>
+                      <input
+                        type="tel"
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                        value={adminForm.phone}
+                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                        placeholder="Ex: +225 0102030405"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <button
+                        type="submit"
+                        disabled={isCreatingAdmin}
+                        className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-ci-orange-600 text-white font-semibold rounded-lg hover:bg-ci-orange-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isCreatingAdmin ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                            Création en cours...
+                          </>
+                        ) : (
+                          <>
+                            <User className="w-5 h-5" />
+                            Créer le compte Administrateur
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="p-6 border-b border-slate-200">
+                    <h2 className="text-xl font-bold text-slate-900">Liste des Administrateurs</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nom</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-200">
+                        {users.filter(u => u.role === 'admin').map((admin) => (
+                          <tr key={admin.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{admin.full_name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{admin.email}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{admin.phone || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => deleteUser(admin.id, admin.email || '')}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Révoquer
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
