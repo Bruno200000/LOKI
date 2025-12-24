@@ -42,7 +42,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     }
 
     try {
-      // Enregistrer l'action de contact
+      // 1. Enregistrer l'action de contact
       const { error: contactError } = await supabase
         .from('property_contacts')
         .insert({
@@ -60,7 +60,46 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
       if (contactError) throw contactError;
 
-      // Récupérer le numéro du propriétaire
+      // 2. Créer automatiquement une réservation si elle n'existe pas déjà
+      if (user?.id) {
+        // Vérifier si une réservation existe déjà pour ce locataire et cette maison
+        const { data: existingBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('tenant_id', user.id)
+          .eq('house_id', houseId)
+          .or('status.eq.pending,status.eq.confirmed')
+          .maybeSingle();
+
+        if (!existingBooking) {
+          // Récupérer le prix de la maison pour la réservation
+          const { data: houseData } = await supabase
+            .from('houses')
+            .select('price')
+            .eq('id', houseId)
+            .single();
+
+          const { error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              house_id: houseId,
+              tenant_id: user.id,
+              owner_id: ownerId,
+              status: 'pending',
+              start_date: new Date().toISOString(),
+              move_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // +7 jours par défaut
+              monthly_rent: houseData?.price || 0,
+              tenant_name: tenantName,
+              tenant_phone: tenantPhone
+            });
+
+          if (bookingError) {
+            console.error('Erreur lors de la création automatique de la réservation:', bookingError);
+          }
+        }
+      }
+
+      // 3. Récupérer le numéro du propriétaire
       const { data: ownerData, error: ownerError } = await supabase
         .from('profiles')
         .select('phone')

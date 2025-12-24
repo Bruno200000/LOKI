@@ -197,27 +197,30 @@ export const HouseBrowser: React.FC = () => {
         </div>
       </div>
 
-      <div className="mb-6 space-y-4">
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher par titre, quartier, localisation..."
-              className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-            />
+      <div className="mb-8 space-y-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-ci-orange-500 to-ci-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-ci-orange-600 transition-colors" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Rechercher par titre, quartier, localisation..."
+                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-ci-orange-500/10 focus:border-ci-orange-500 outline-none transition-all shadow-sm hover:shadow-md"
+              />
+            </div>
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition ${showFilters
-              ? 'bg-ci-orange-600 text-white'
-              : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+            className={`px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-3 shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${showFilters
+              ? 'bg-gradient-to-r from-ci-orange-600 to-ci-orange-700 text-white shadow-ci-orange-200'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
           >
-            <Filter className="w-5 h-5" />
-            Filtres
+            <Filter className={`w-5 h-5 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
+            Filtres Avancés
           </button>
         </div>
 
