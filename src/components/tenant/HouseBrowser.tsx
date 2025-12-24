@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, House } from '../../lib/supabase';
-import { Search, Filter, X, Home as HomeIcon, MapPin, Bed, Bath, Eye } from 'lucide-react';
+import { Search, X, Home as HomeIcon, MapPin, Bed, Bath, Eye } from 'lucide-react';
 import { PropertyDetailsModal } from './PropertyDetailsModal';
 
 export const HouseBrowser: React.FC = () => {
@@ -11,7 +11,7 @@ export const HouseBrowser: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minBedrooms, setMinBedrooms] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [neighborhoodFilter, setNeighborhoodFilter] = useState('');
@@ -147,147 +147,91 @@ export const HouseBrowser: React.FC = () => {
         </p>
       </div>
 
-      <div className="mb-6 overflow-x-auto pb-2">
-        <div className="flex gap-2 min-w-max">
-          <button
-            onClick={() => setSelectedType('all')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'all'
-              ? 'bg-ci-orange-600 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-          >
-            Tout voir
-          </button>
-          <button
-            onClick={() => setSelectedType('residence')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'residence'
-              ? 'bg-ci-orange-600 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-          >
-            Résidences Meublées
-          </button>
-          <button
-            onClick={() => setSelectedType('house')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'house'
-              ? 'bg-ci-orange-600 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-          >
-            Maisons à louer
-          </button>
-          <button
-            onClick={() => setSelectedType('land')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'land'
-              ? 'bg-ci-orange-600 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-          >
-            Vente Terrain/Maison
-          </button>
-          <button
-            onClick={() => setSelectedType('shop')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'shop'
-              ? 'bg-ci-orange-600 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-              }`}
-          >
-            Magasin/Commerce
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-8 space-y-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-ci-orange-500 to-ci-orange-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+      <div className="bg-white rounded-2xl shadow-xl p-6 mb-12 border border-slate-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Recherche par texte */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Recherche</label>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-ci-orange-600 transition-colors" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Rechercher par titre, quartier, localisation..."
-                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-ci-orange-500/10 focus:border-ci-orange-500 outline-none transition-all shadow-sm hover:shadow-md"
+                placeholder="Titre, quartier, ville..."
+                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition-all"
               />
             </div>
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-3 shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${showFilters
-              ? 'bg-gradient-to-r from-ci-orange-600 to-ci-orange-700 text-white shadow-ci-orange-200'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <Filter className={`w-5 h-5 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
-            Filtres Avancés
-          </button>
+
+          {/* Type de bien */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Type de bien</label>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition-all"
+            >
+              <option value="all">Tous les types</option>
+              <option value="residence">Résidences Meublées</option>
+              <option value="house">Maisons à louer</option>
+              <option value="land">Vente Terrain/Maison</option>
+              <option value="shop">Magasin/Commerce</option>
+            </select>
+          </div>
+
+          {/* Ville */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Ville</label>
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition-all"
+            >
+              <option value="">Toutes les villes</option>
+              <option value="Abidjan">Abidjan</option>
+              <option value="Bouaké">Bouaké</option>
+              <option value="Daloa">Daloa</option>
+              <option value="Yamoussoukro">Yamoussoukro</option>
+              <option value="San-Pédro">San-Pédro</option>
+            </select>
+          </div>
+
+          {/* Prix Max */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Prix maximum (FCFA)</label>
+            <input
+              type="number"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              placeholder="Ex: 200000"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition-all"
+            />
+          </div>
         </div>
 
-        {showFilters && (
-          <div className="bg-white p-6 rounded-lg border border-slate-200 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Ville
-                </label>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none"
-                >
-                  <option value="">Toutes les villes</option>
-                  <option value="Abidjan">Abidjan</option>
-                  <option value="Bouaké">Bouaké</option>
-                  <option value="Daloa">Daloa</option>
-                  <option value="Yamoussoukro">Yamoussoukro</option>
-                  <option value="San-Pédro">San-Pédro</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Prix maximum (FCFA)
-                </label>
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="200000"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nombre de chambres minimum
-                </label>
-                <select
-                  value={minBedrooms}
-                  onChange={(e) => setMinBedrooms(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none"
-                >
-                  <option value="">Toutes</option>
-                  <option value="1">1+</option>
-                  <option value="2">2+</option>
-                  <option value="3">3+</option>
-                  <option value="4">4+</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Quartier
-                </label>
-                <input
-                  type="text"
-                  value={neighborhoodFilter}
-                  onChange={(e) => setNeighborhoodFilter(e.target.value)}
-                  placeholder="Cocody, Yopougon..."
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none"
-                />
-              </div>
+        {(searchTerm || selectedType !== 'all' || selectedCity || maxPrice || minBedrooms || neighborhoodFilter) && (
+          <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                  "{searchTerm}"
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchTerm('')} />
+                </span>
+              )}
+              {selectedType !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-medium">
+                  {selectedType}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedType('all')} />
+                </span>
+              )}
+              {selectedCity && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-medium">
+                  {selectedCity}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedCity('')} />
+                </span>
+              )}
             </div>
-
             <button
               onClick={() => {
                 setSelectedCity('');
@@ -295,8 +239,9 @@ export const HouseBrowser: React.FC = () => {
                 setMinBedrooms('');
                 setSearchTerm('');
                 setNeighborhoodFilter('');
+                setSelectedType('all');
               }}
-              className="text-sm text-ci-orange-600 hover:text-ci-orange-700 font-semibold flex items-center gap-1"
+              className="text-sm font-bold text-ci-orange-600 hover:text-ci-orange-700 flex items-center gap-2 transition-colors"
             >
               <X className="w-4 h-4" />
               Réinitialiser les filtres
