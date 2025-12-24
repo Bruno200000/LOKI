@@ -125,9 +125,10 @@ export const BookingManager: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Mes Réservations</h1>
-        <p className="text-slate-600">
-          {bookings.length} réservation{bookings.length > 1 ? 's' : ''}
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Suivi des Contacts</h1>
+        <p className="text-slate-600 mb-1">Historique des contacts initiés par les locataires</p>
+        <p className="text-sm font-medium text-ci-orange-600">
+          {bookings.length} contact{bookings.length > 1 ? 's' : ''} initié{bookings.length > 1 ? 's' : ''}
         </p>
       </div>
 
@@ -149,10 +150,10 @@ export const BookingManager: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
           <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-slate-900 mb-2">
-            Aucune réservation
+            Aucun contact initié
           </h3>
           <p className="text-slate-600">
-            Commencez par parcourir les propriétés disponibles
+            Commencez par parcourir les propriétés et contactez les propriétaires
           </p>
         </div>
       ) : (
@@ -225,7 +226,7 @@ export const BookingManager: React.FC = () => {
                         className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm sm:text-base"
                       >
                         <X className="w-4 h-4" />
-                        Annuler la réservation
+                        Annuler la demande
                       </button>
                       {booking.status === 'confirmed' && (
                         <div className="mt-2 sm:mt-0">

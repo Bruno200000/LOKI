@@ -36,13 +36,13 @@ const DASHBOARD_CONFIG = {
     },
     bookings: {
       count: "0",
-      label: "Réservations",
-      description: "Vos réservations actives"
+      label: "Suivi des Contacts",
+      description: "Suivi de vos demandes"
     }
   },
   navigation: {
     browse: "Parcourir",
-    bookings: "Mes réservations",
+    bookings: "Suivi des Contacts",
     profile: "Mon profil",
     logout: "Déconnexion",
     viewSite: "Voir le site",
