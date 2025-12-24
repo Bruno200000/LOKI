@@ -12,7 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  setProfile: (profile: Profile | null) => void;
+  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,8 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchProfile(session.user.id).then(async (profileData) => {
           if (!profileData && session.user) {
             const fullName = session.user.user_metadata?.full_name ||
-                           session.user.user_metadata?.name ||
-                           session.user.email?.split('@')[0] || 'User';
+              session.user.user_metadata?.name ||
+              session.user.email?.split('@')[0] || 'User';
 
             // Validation du nom avant insertion
             const nameValidation = SecurityUtils.validateFullName(fullName);
@@ -104,8 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (!profileData) {
             const fullName = session.user.user_metadata?.full_name ||
-                           session.user.user_metadata?.name ||
-                           session.user.email?.split('@')[0] || 'User';
+              session.user.user_metadata?.name ||
+              session.user.email?.split('@')[0] || 'User';
 
             // Validation du nom avant insertion
             const nameValidation = SecurityUtils.validateFullName(fullName);

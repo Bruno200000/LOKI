@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { House, supabase } from '../../lib/supabase';
-import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight, Phone, MessageCircle } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ContactModal } from './ContactModal';
 

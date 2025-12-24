@@ -6,7 +6,7 @@ import { OwnerContactInfo } from './OwnerContactInfo';
 
 export const BookingManager: React.FC = () => {
   const { profile } = useAuth();
-  
+
   // Vérification de l'initialisation du profil
   if (!profile) {
     return (
@@ -57,7 +57,7 @@ export const BookingManager: React.FC = () => {
     }
   };
 
-  const handleCancelBooking = async (bookingId: number, houseId: number) => {
+  const handleCancelBooking = async (bookingId: string, houseId: number) => {
     if (!bookingId || !houseId) {
       console.error('ID de réservation ou de maison invalide');
       return;
@@ -230,8 +230,8 @@ export const BookingManager: React.FC = () => {
                       {booking.status === 'confirmed' && (
                         <div className="mt-2 sm:mt-0">
                           {booking?.owner_id && (
-                            <OwnerContactInfo 
-                              ownerId={booking.owner_id.toString()} 
+                            <OwnerContactInfo
+                              ownerId={booking.owner_id.toString()}
                             />
                           )}
                         </div>

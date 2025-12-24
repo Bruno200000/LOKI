@@ -15,7 +15,7 @@ export const HouseBrowser: React.FC = () => {
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [neighborhoodFilter, setNeighborhoodFilter] = useState('');
-  const [ownerPhones, setOwnerPhones] = useState<Record<string, string>>({});
+
 
   useEffect(() => {
     fetchHouses();
@@ -82,19 +82,7 @@ export const HouseBrowser: React.FC = () => {
         console.log('   - Vérifiez les politiques de sécurité (RLS) pour l\'accès public');
         console.log('   - Testez l\'accessibilité des URLs dans le navigateur');
       }
-      // Précharger les numéros des propriétaires pour affichage
-      const ownerIds = Array.from(new Set((data || []).map((h: any) => h.owner_id)));
-      if (ownerIds.length > 0) {
-        const { data: owners, error: ownersError } = await supabase
-          .from('profiles')
-          .select('id, phone')
-          .in('id', ownerIds);
-        if (!ownersError && owners) {
-          const map: Record<string, string> = {};
-          owners.forEach((o: any) => { map[o.id] = o.phone || 'Non disponible'; });
-          setOwnerPhones(map);
-        }
-      }
+
 
     } catch (error) {
       console.error('Error fetching houses:', error);
@@ -136,7 +124,7 @@ export const HouseBrowser: React.FC = () => {
     }
 
     if (minBedrooms) {
-      filtered = filtered.filter((house) => house.bedrooms >= parseInt(minBedrooms));
+      filtered = filtered.filter((house) => (house.bedrooms || 0) >= parseInt(minBedrooms));
     }
 
     setFilteredHouses(filtered);
@@ -164,8 +152,8 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => setSelectedType('all')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'all'
-                ? 'bg-ci-orange-600 text-white shadow-md'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-ci-orange-600 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             Tout voir
@@ -173,8 +161,8 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => setSelectedType('residence')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'residence'
-                ? 'bg-ci-orange-600 text-white shadow-md'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-ci-orange-600 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             Résidences Meublées
@@ -182,8 +170,8 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => setSelectedType('house')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'house'
-                ? 'bg-ci-orange-600 text-white shadow-md'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-ci-orange-600 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             Maisons à louer
@@ -191,8 +179,8 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => setSelectedType('land')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'land'
-                ? 'bg-ci-orange-600 text-white shadow-md'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-ci-orange-600 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             Vente Terrain/Maison
@@ -200,8 +188,8 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => setSelectedType('shop')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedType === 'shop'
-                ? 'bg-ci-orange-600 text-white shadow-md'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-ci-orange-600 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
           >
             Magasin/Commerce
@@ -403,11 +391,7 @@ export const HouseBrowser: React.FC = () => {
               </div>
 
               <div className="p-5">
-                {house.type !== 'residence' && (
-                  <div className="mb-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm font-medium">
-                    Téléphone propriétaire: {ownerPhones[house.owner_id] || 'Non disponible'}
-                  </div>
-                )}
+
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg text-slate-900 line-clamp-1">
                     {house.title}
@@ -431,11 +415,11 @@ export const HouseBrowser: React.FC = () => {
                 <div className="flex items-center gap-4 text-sm text-slate-600 mb-4">
                   <div className="flex items-center gap-1">
                     <Bed className="w-4 h-4" />
-                    <span>{house.bedrooms} chambre{house.bedrooms > 1 ? 's' : ''}</span>
+                    <span>{house.bedrooms || 1} chambre{(house.bedrooms || 1) > 1 ? 's' : ''}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Bath className="w-4 h-4" />
-                    <span>{house.bathrooms} salle{house.bathrooms > 1 ? 's' : ''} de bain</span>
+                    <span>{house.bathrooms || 1} salle{(house.bathrooms || 1) > 1 ? 's' : ''} de bain</span>
                   </div>
                   {house.area_sqm && (
                     <div className="flex items-center gap-1">

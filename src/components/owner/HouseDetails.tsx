@@ -49,13 +49,12 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                 </div>
               </div>
               <span
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                  house.status === 'available'
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold ${house.status === 'available'
                     ? 'bg-green-100 text-green-800'
                     : house.status === 'taken'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
               >
                 {house.status === 'available' ? 'Disponible' : house.status === 'taken' ? 'Pris' : 'En attente'}
               </span>
@@ -155,10 +154,10 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                       <span className="font-semibold">{house.neighborhood}</span>
                     </div>
                   )}
-                  {house.property_type && (
+                  {house.type && (
                     <div className="flex items-center justify-between">
                       <span className="text-slate-700">Type</span>
-                      <span className="font-semibold">{house.property_type}</span>
+                      <span className="font-semibold">{house.type}</span>
                     </div>
                   )}
                   {house.floor && (
