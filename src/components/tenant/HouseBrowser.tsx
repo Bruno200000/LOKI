@@ -180,20 +180,54 @@ export const HouseBrowser: React.FC = () => {
             </select>
           </div>
 
-          {/* Ville */}
+          {/* Quartier */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Ville</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Quartier</label>
             <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
+              value={neighborhoodFilter}
+              onChange={(e) => setNeighborhoodFilter(e.target.value)}
               className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition-all"
             >
-              <option value="">Toutes les villes</option>
-              <option value="Abidjan">Abidjan</option>
-              <option value="Bouaké">Bouaké</option>
-              <option value="Daloa">Daloa</option>
-              <option value="Yamoussoukro">Yamoussoukro</option>
-              <option value="San-Pédro">San-Pédro</option>
+              <option value="">Tous les quartiers</option>
+              <option value="Aéroport">Aéroport</option>
+              <option value="Ahougnanssou">Ahougnanssou</option>
+              <option value="Air France 1">Air France 1</option>
+              <option value="Air France 2">Air France 2</option>
+              <option value="Air France 3">Air France 3</option>
+              <option value="Allokokro">Allokokro</option>
+              <option value="Attienkro">Attienkro</option>
+              <option value="Beaufort">Beaufort</option>
+              <option value="Belleville 1">Belleville 1</option>
+              <option value="Belleville 2">Belleville 2</option>
+              <option value="Broukro 1">Broukro 1</option>
+              <option value="Broukro 2">Broukro 2</option>
+              <option value="Camp Militaire">Camp Militaire</option>
+              <option value="Commerce">Commerce</option>
+              <option value="Dar-es-Salam 1">Dar-es-Salam 1</option>
+              <option value="Dar-es-Salam 2">Dar-es-Salam 2</option>
+              <option value="Dar-es-Salam 3">Dar-es-Salam 3</option>
+              <option value="Dougouba">Dougouba</option>
+              <option value="Gonfreville">Gonfreville</option>
+              <option value="Houphouët-Ville">Houphouët-Ville</option>
+              <option value="IDESSA">IDESSA</option>
+              <option value="Kamounoukro">Kamounoukro</option>
+              <option value="Kanakro">Kanakro</option>
+              <option value="Kennedy">Kennedy</option>
+              <option value="Koko">Koko</option>
+              <option value="Kodiakoffikro">Kodiakoffikro</option>
+              <option value="Konankankro">Konankankro</option>
+              <option value="Liberté">Liberté</option>
+              <option value="Lycée Municipal">Lycée Municipal</option>
+              <option value="Mamianou">Mamianou</option>
+              <option value="N’Dakro">N’Dakro</option>
+              <option value="N’Gattakro">N’Gattakro</option>
+              <option value="N’Gouatanoukro">N’Gouatanoukro</option>
+              <option value="Niankoukro">Niankoukro</option>
+              <option value="Nimbo">Nimbo</option>
+              <option value="Sokoura">Sokoura</option>
+              <option value="Tièrèkro">Tièrèkro</option>
+              <option value="Tolla Kouadiokro">Tolla Kouadiokro</option>
+              <option value="Zone Industrielle">Zone Industrielle</option>
             </select>
           </div>
 
@@ -225,10 +259,10 @@ export const HouseBrowser: React.FC = () => {
                   <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedType('all')} />
                 </span>
               )}
-              {selectedCity && (
+              {neighborhoodFilter && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-medium">
-                  {selectedCity}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedCity('')} />
+                  {neighborhoodFilter}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setNeighborhoodFilter('')} />
                 </span>
               )}
             </div>
