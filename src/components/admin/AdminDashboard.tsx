@@ -529,7 +529,7 @@ export const AdminDashboard: React.FC = () => {
                     }`}
                 >
                   <Calendar className="w-4 h-4 inline mr-2" />
-                  Réservations ({bookings.length})
+                  Demandes ({bookings.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('contacts')}
@@ -620,10 +620,10 @@ export const AdminDashboard: React.FC = () => {
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Réservations</p>
+                        <p className="text-sm text-slate-600">Demandes</p>
                         <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
                         <p className="text-xs text-green-600 mt-1">
-                          {stats.activeBookings} actives
+                          {stats.activeBookings} confirmées
                         </p>
                       </div>
                       <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -791,8 +791,8 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'bookings' && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200">
                 <div className="p-6 border-b border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900">Gestion des Réservations</h2>
-                  <p className="text-slate-600 mt-1">Liste de toutes les réservations</p>
+                  <h2 className="text-xl font-bold text-slate-900">Suivi des Demandes</h2>
+                  <p className="text-slate-600 mt-1">Liste de toutes les demandes de mise en relation</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -859,7 +859,7 @@ export const AdminDashboard: React.FC = () => {
                   {bookings.length === 0 && (
                     <div className="text-center py-12">
                       <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-600">Aucune réservation enregistrée</p>
+                      <p className="text-slate-600">Aucune demande enregistrée</p>
                     </div>
                   )}
                 </div>
@@ -950,7 +950,7 @@ export const AdminDashboard: React.FC = () => {
                                   onClick={() => updateContactStatus(contact.id, 'reservation_made')}
                                   className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                                 >
-                                  Marquer réservation
+                                  Marquer demande effectuée
                                 </button>
                               )}
                               {contact.status === 'reservation_made' && (
@@ -1112,7 +1112,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-slate-600">
-                          Réservations {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
+                          Demandes {analyticsPeriod === 'week' ? 'cette semaine' : analyticsPeriod === 'month' ? 'ce mois' : 'cette année'}
                         </span>
                         <span className="text-sm font-semibold">
                           {analyticsPeriod === 'week' ? Math.round(stats.totalBookings / 4) : analyticsPeriod === 'month' ? Math.round(stats.totalBookings / 12) : stats.totalBookings}
@@ -1319,7 +1319,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <h3 className="text-lg font-bold mb-2">Accès Administrateur</h3>
                         <p className="text-slate-400 text-sm leading-relaxed">
-                          Les administrateurs peuvent gérer les utilisateurs, voir les réservations, suivre les commissions et gérer les autres privilèges de la plateforme.
+                          Les administrateurs peuvent gérer les utilisateurs, voir les demandes de contact, suivre les commissions et gérer les autres privilèges de la plateforme.
                         </p>
                       </div>
                       <div className="mt-8">
