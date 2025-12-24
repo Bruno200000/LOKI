@@ -13,6 +13,9 @@ interface Stats {
   activeBookings: number;
   totalCommissions: number;
   activeCommissions: number;
+  totalRevenuePotential: number; // Nouveau
+  averageCommission: number;    // Nouveau
+  conversionRate: number;      // Nouveau
 }
 
 interface User {
@@ -75,6 +78,9 @@ export const AdminDashboard: React.FC = () => {
     activeBookings: 0,
     totalCommissions: 0,
     activeCommissions: 0,
+    totalRevenuePotential: 0,
+    averageCommission: 0,
+    conversionRate: 0,
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -143,6 +149,9 @@ export const AdminDashboard: React.FC = () => {
 
       const totalCommissions = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
       const activeCommissions = payments.filter(p => p.status === 'pending').length;
+      const totalRevenuePotential = totalCommissions + (activeCommissions * 5000); // 5000 est une moyenne estimée
+      const averageCommission = totalBookings > 0 ? Math.round(totalCommissions / totalBookings) : 0;
+      const conversionRate = totalBookings > 0 ? Math.round((activeBookings / totalBookings) * 100) : 0;
 
       setStats({
         totalOwners,
@@ -154,6 +163,9 @@ export const AdminDashboard: React.FC = () => {
         activeBookings,
         totalCommissions,
         activeCommissions,
+        totalRevenuePotential,
+        averageCommission,
+        conversionRate,
       });
 
       setChartData([
@@ -170,6 +182,9 @@ export const AdminDashboard: React.FC = () => {
         activeBookings,
         totalCommissions,
         activeCommissions,
+        totalRevenuePotential,
+        averageCommission,
+        conversionRate,
       });
     } catch (error) {
       console.error('❌ Erreur fetchStats:', error);
@@ -620,14 +635,36 @@ export const AdminDashboard: React.FC = () => {
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Commissions</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalCommissions} FCFA</p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          {stats.activeCommissions} en attente
+                        <p className="text-sm text-slate-600">Revenus Cumulés</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalCommissions.toLocaleString()} FCFA</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Conversion: {stats.conversionRate}%
                         </p>
                       </div>
                       <div className="w-12 h-12 bg-ci-orange-100 rounded-lg flex items-center justify-center">
                         <DollarSign className="w-6 h-6 text-ci-orange-600" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-ci-orange-600 p-6 rounded-xl shadow-lg border border-ci-orange-700 text-white">
+                    <p className="text-ci-orange-100 text-sm font-medium uppercase">Potentiel Total</p>
+                    <p className="text-3xl font-bold mt-1">{stats.totalRevenuePotential.toLocaleString()} FCFA</p>
+                    <p className="text-ci-orange-100 text-xs mt-2">Incluant {stats.activeCommissions} commissions en attente</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <p className="text-slate-500 text-sm font-medium uppercase">Commission Moyenne</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.averageCommission.toLocaleString()} FCFA</p>
+                    <p className="text-slate-500 text-xs mt-2">Par conversion réussie</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <p className="text-slate-500 text-sm font-medium uppercase">Taux d'Emménagement</p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <p className="text-3xl font-bold text-slate-900">{stats.occupancyRate}%</p>
+                      <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-green-500 h-full rounded-full" style={{ width: `${stats.occupancyRate}%` }} />
                       </div>
                     </div>
                   </div>
@@ -1195,100 +1232,152 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'admins' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">Ajouter un Administrateur</h2>
-                  <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Nom Complet</label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
-                        value={adminForm.fullName}
-                        onChange={(e) => setAdminForm({ ...adminForm, fullName: e.target.value })}
-                        placeholder="Ex: Jean Kouassi"
-                      />
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-ci-orange-100 rounded-lg flex items-center justify-center">
+                        <User className="w-5 h-5 text-ci-orange-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">Ajouter un Administrateur</h2>
+                        <p className="text-sm text-slate-500">Créez un nouveau compte avec des accès administratifs</p>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Email</label>
-                      <input
-                        type="email"
-                        required
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
-                        value={adminForm.email}
-                        onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                        placeholder="jean.kouassi@loki.ci"
-                      />
+                    <form onSubmit={handleCreateAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Nom Complet</label>
+                        <input
+                          type="text"
+                          required
+                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                          value={adminForm.fullName}
+                          onChange={(e) => setAdminForm({ ...adminForm, fullName: e.target.value })}
+                          placeholder="Ex: Jean Kouassi"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Email</label>
+                        <input
+                          type="email"
+                          required
+                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                          value={adminForm.email}
+                          onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                          placeholder="jean.kouassi@loki.ci"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Mot de passe</label>
+                        <input
+                          type="password"
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                          value={adminForm.password}
+                          onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                          placeholder="6 caractères minimum"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Téléphone</label>
+                        <input
+                          type="tel"
+                          className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                          value={adminForm.phone}
+                          onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                          placeholder="Ex: +225 0102030405"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <button
+                          type="submit"
+                          disabled={isCreatingAdmin}
+                          className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-ci-orange-600 text-white font-semibold rounded-lg hover:bg-ci-orange-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-ci-orange-200"
+                        >
+                          {isCreatingAdmin ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                              Création en cours...
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-5 h-5" />
+                              Créer le compte Administrateur
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="bg-slate-900 p-6 rounded-xl shadow-lg text-white">
+                    <div className="flex flex-col h-full justify-between">
+                      <div>
+                        <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-4">
+                          <CheckCircle className="w-6 h-6 text-ci-orange-400" />
+                        </div>
+                        <h3 className="text-lg font-bold mb-2">Accès Administrateur</h3>
+                        <p className="text-slate-400 text-sm leading-relaxed">
+                          Les administrateurs peuvent gérer les utilisateurs, voir les réservations, suivre les commissions et gérer les autres privilèges de la plateforme.
+                        </p>
+                      </div>
+                      <div className="mt-8">
+                        <p className="text-slate-400 text-xs uppercase font-semibold mb-1">Total Actuels</p>
+                        <p className="text-4xl font-bold text-ci-orange-400">
+                          {users.filter(u => u.role === 'admin').length}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Mot de passe</label>
-                      <input
-                        type="password"
-                        required
-                        minLength={6}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
-                        value={adminForm.password}
-                        onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                        placeholder="6 caractères minimum"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Téléphone</label>
-                      <input
-                        type="tel"
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
-                        value={adminForm.phone}
-                        onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
-                        placeholder="Ex: +225 0102030405"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <button
-                        type="submit"
-                        disabled={isCreatingAdmin}
-                        className="flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-ci-orange-600 text-white font-semibold rounded-lg hover:bg-ci-orange-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isCreatingAdmin ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                            Création en cours...
-                          </>
-                        ) : (
-                          <>
-                            <User className="w-5 h-5" />
-                            Créer le compte Administrateur
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-bold text-slate-900">Liste des Administrateurs</h2>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-slate-900">Équipe Administrative</h2>
+                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">
+                      {users.filter(u => u.role === 'admin').length} comptes
+                    </span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nom</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Administrateur</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contact</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Rôle</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-slate-200">
                         {users.filter(u => u.role === 'admin').map((admin) => (
-                          <tr key={admin.id} className="hover:bg-slate-50">
-                            <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{admin.full_name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{admin.email}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{admin.phone || 'N/A'}</td>
+                          <tr key={admin.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
+                                  <User className="w-5 h-5 text-slate-600" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{admin.full_name}</p>
+                                  <p className="text-xs text-slate-500">ID: {admin.id.substring(0, 8)}...</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="space-y-1">
+                                <p className="text-sm text-slate-700 font-medium">{admin.email}</p>
+                                <p className="text-xs text-slate-500">{admin.phone || 'Pas de téléphone'}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                                Super Admin
+                              </span>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button
                                 onClick={() => deleteUser(admin.id, admin.email || '')}
-                                className="text-red-600 hover:text-red-900"
+                                className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
                               >
                                 Révoquer
                               </button>
@@ -1297,6 +1386,14 @@ export const AdminDashboard: React.FC = () => {
                         ))}
                       </tbody>
                     </table>
+                    {users.filter(u => u.role === 'admin').length === 0 && (
+                      <div className="text-center py-20 bg-slate-50/50">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <User className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <p className="text-slate-500 font-medium">Aucun administrateur trouvé</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
