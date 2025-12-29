@@ -38,25 +38,25 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
 
   useEffect(() => {
     let filtered = houses;
-    
+
     // Filtrer par catégorie
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(house => house.type === selectedCategory);
     }
-    
+
     // Filtrer par quartier
     if (searchNeighborhood) {
-      filtered = filtered.filter(house => 
+      filtered = filtered.filter(house =>
         house.neighborhood && house.neighborhood.toLowerCase().includes(searchNeighborhood.toLowerCase())
       );
     }
-    
+
     // Filtrer par prix maximum
     if (maxPrice) {
       const maxPriceNum = parseFloat(maxPrice);
       filtered = filtered.filter(house => house.price <= maxPriceNum);
     }
-    
+
     setFilteredHouses(filtered);
   }, [selectedCategory, searchNeighborhood, maxPrice, houses]);
 
@@ -72,7 +72,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
       'N\'Gattakro', 'N\'Gouatanoukro', 'Niankoukro', 'Nimbo', 'Sokoura',
       'Tièrèkro', 'Tolla Kouadiokro', 'Zone Industrielle'
     ];
-    
+
     // Extraire les quartiers uniques des maisons et combiner avec la liste prédéfinie
     const houseNeighborhoods = houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood));
     const allNeighborhoods = [...new Set([...predefinedNeighborhoods, ...houseNeighborhoods])].sort();
@@ -146,10 +146,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
               <a href="/#pricing" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Tarifs
               </a>
-              <button onClick={() => window.location.href = '/about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <button onClick={() => window.location.href = './about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 À propos
               </button>
-              <button onClick={() => window.location.href = '/contact'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <button onClick={() => window.location.href = './contact'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Contact
               </button>
               {showBackToDashboard && (
@@ -204,7 +204,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </a>
                 <button
                   onClick={() => {
-                    window.location.href = '/about';
+                    window.location.href = './about';
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
@@ -213,7 +213,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </button>
                 <button
                   onClick={() => {
-                    window.location.href = '/contact';
+                    window.location.href = './contact';
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
@@ -250,8 +250,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         {/* Animations de fond avec gradients colorés */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-ci-orange-200 to-yellow-200 rounded-full blur-3xl opacity-40 animate-bounce-slow"></div>
-          <div className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-br from-ci-green-200 to-emerald-200 rounded-full blur-3xl opacity-30 animate-bounce-slow" style={{animationDelay: '1s'}}></div>
-          <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full blur-3xl opacity-25 animate-bounce-slow" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-br from-ci-green-200 to-emerald-200 rounded-full blur-3xl opacity-30 animate-bounce-slow" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute bottom-20 left-1/4 w-36 h-36 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full blur-3xl opacity-25 animate-bounce-slow" style={{ animationDelay: '2s' }}></div>
         </div>
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center max-w-4xl mx-auto mb-16 animate-fade-in">
@@ -262,11 +262,11 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 À trouver votre résidence, maison, terrain, magasin…
               </span>
             </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
               Connectez propriétaires et locataires en quelques clics. Gérez vos biens et réservations.
               Mise en relation directe, sans paiement côté utilisateur.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{animationDelay: '0.2s'}}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <button
                 onClick={handleGetStarted}
                 className="inline-flex items-center bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg hover:shadow-xl w-full sm:w-auto justify-center transform hover:scale-105"
@@ -275,7 +275,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
               <button
-                onClick={() => window.location.href = '/demo'}
+                onClick={() => window.location.href = './demo'}
                 className="inline-flex items-center border-2 border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 px-8 py-4 rounded-xl font-semibold text-lg transition-all w-full sm:w-auto justify-center bg-white hover:bg-slate-50 transform hover:scale-105"
               >
                 Voir le démo
@@ -284,7 +284,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
             <p className="text-sm text-slate-500 mt-6">Aucune carte bancaire requise. Commencez en 2 minutes.</p>
           </div>
 
-          <div className="relative max-w-5xl mx-auto animate-scale-in" style={{animationDelay: '0.3s'}}>
+          <div className="relative max-w-5xl mx-auto animate-scale-in" style={{ animationDelay: '0.3s' }}>
             <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
               <div className="bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center space-x-2">
                 <div className="flex space-x-1 sm:space-x-2">
@@ -336,7 +336,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         {/* Animations de fond avec gradients colorés */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-10 right-10 w-64 h-64 bg-gradient-to-br from-ci-green-100 to-ci-orange-100 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute bottom-10 left-10 w-48 h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full blur-3xl opacity-25 animate-pulse" style={{animationDelay: '1.5s'}}></div>
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full blur-3xl opacity-25 animate-pulse" style={{ animationDelay: '1.5s' }}></div>
         </div>
         <div className="max-w-7xl mx-auto text-center mb-16 relative z-10">
           <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
@@ -421,8 +421,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         {/* Animations de fond avec gradients colorés */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-ci-orange-200 to-ci-green-200 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-ci-green-200 to-blue-200 rounded-full blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-ci-green-200 to-blue-200 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
@@ -530,7 +530,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 <div
                   key={house.id}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group"
-                  style={{animationDelay: `${index * 0.1}s`}}
+                  style={{ animationDelay: `${index * 0.1}s` }}
                   onMouseEnter={() => setHoveredCard(house.id)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
@@ -675,8 +675,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Aucun résultat trouvé</h3>
               <p className="text-slate-600 mb-6">
-                {selectedCategory !== 'all' || searchNeighborhood || maxPrice 
-                  ? 'Essayez d\'ajuster vos filtres pour voir plus de résultats.' 
+                {selectedCategory !== 'all' || searchNeighborhood || maxPrice
+                  ? 'Essayez d\'ajuster vos filtres pour voir plus de résultats.'
                   : 'Revenez bientôt pour découvrir nos nouvelles offres'}
               </p>
               {(selectedCategory !== 'all' || searchNeighborhood || maxPrice) && (
@@ -729,8 +729,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         {/* Animations de fond avec gradients colorés */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-ci-green-200/30 to-ci-orange-200/30 rounded-full blur-3xl opacity-40 animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/30 to-yellow-200/30 rounded-full blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-emerald-200/20 to-ci-green-200/20 rounded-full blur-3xl opacity-25 animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/30 to-yellow-200/30 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-emerald-200/20 to-ci-green-200/20 rounded-full blur-3xl opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
@@ -1114,8 +1114,8 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
         {/* Animations de fond avec gradients colorés */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-white/10 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-green-200/20 to-emerald-200/20 rounded-full blur-3xl opacity-25 animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-200/10 to-pink-200/10 rounded-full blur-3xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-green-200/20 to-emerald-200/20 rounded-full blur-3xl opacity-25 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-200/10 to-pink-200/10 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">

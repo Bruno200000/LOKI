@@ -14,7 +14,9 @@ export const AboutPage: React.FC<AboutPageProps> = () => {
   };
 
   const handleNavigation = (path: string) => {
-    window.location.href = path;
+    // If path is root, go to empty string to stay in current directory context
+    const target = path === '/' ? './' : path.startsWith('/') ? '.' + path : path;
+    window.location.href = target;
   };
 
   return (

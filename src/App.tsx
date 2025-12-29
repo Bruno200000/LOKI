@@ -125,7 +125,13 @@ function AppContent() {
   const [forceLogin, setForceLogin] = useState(false);
 
   // Handle URL-based routing first
-  const currentPath = window.location.pathname;
+  const fullPath = window.location.pathname;
+  // Normalize path: skip potential base path if hosted on subdirectory, remove trailing slash, ensure starts with /
+  const currentPath = '/' + (fullPath.split('/').pop() || '');
+  const isAbout = fullPath.endsWith('/about') || fullPath.endsWith('/about/');
+  const isContact = fullPath.endsWith('/contact') || fullPath.endsWith('/contact/');
+  const isDemo = fullPath.endsWith('/demo') || fullPath.endsWith('/demo/');
+
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
   const loginParam = urlParams.get('login');
@@ -172,12 +178,12 @@ function AppContent() {
   }
 
   // Handle URL-based routing FIRST - this should take priority over authentication logic
-  if (currentPath === '/demo') {
+  if (isDemo) {
     return <DemoPage />;
   }
 
   // Handle About and Contact pages - show for all users unless they specifically want to go to dashboard
-  if (currentPath === '/about' || currentPath === '/contact') {
+  if (isAbout || isContact) {
     // If user is authenticated and wants to view dashboard (not public pages), redirect to dashboard
     if (user && profile && viewParam === 'dashboard') {
       return <div></div>; // This will fall through to dashboard logic below
@@ -194,10 +200,10 @@ function AppContent() {
     }
 
     // Show the public pages for all users
-    if (currentPath === '/about') {
+    if (isAbout) {
       return <AboutPage />;
     }
-    if (currentPath === '/contact') {
+    if (isContact) {
       return <ContactPage />;
     }
   }

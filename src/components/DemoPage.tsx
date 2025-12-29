@@ -7,13 +7,13 @@ export const DemoPage: React.FC = () => {
   const navigateTo = (destination: string) => {
     switch (destination) {
       case 'home':
-        window.location.href = '/';
+        window.location.href = './';
         break;
       case 'about':
-        window.location.href = '/about';
+        window.location.href = './about';
         break;
       case 'contact':
-        window.location.href = '/contact';
+        window.location.href = './contact';
         break;
       case 'back':
         window.history.back();
