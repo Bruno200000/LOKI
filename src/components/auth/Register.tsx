@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users, Phone, MapPin } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { UserPlus, Mail, Lock, User, AlertCircle, Home, Users, Phone, MapPin, Eye, EyeOff } from 'lucide-react';
+import { supabase, IVORIAN_CITIES } from '../../lib/supabase';
 
 interface RegisterProps {
   onToggleMode: () => void;
@@ -11,8 +11,10 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
   const { signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
   const [role, setRole] = useState<'owner' | 'tenant'>('tenant');
   const [ownerType, setOwnerType] = useState<'particulier' | 'agent'>('particulier');
   const [mainActivityNeighborhood, setMainActivityNeighborhood] = useState('');
@@ -33,7 +35,7 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
     }
 
     try {
-      await signUp(email, password, fullName, role, phone, ownerType, mainActivityNeighborhood);
+      await signUp(email, password, fullName, role, phone, city, ownerType, mainActivityNeighborhood);
       setSuccess('Compte créé avec succès ! Vérifiez votre email et cliquez sur le lien de confirmation. Vous serez ensuite redirigé vers votre tableau de bord.');
       setLoading(false);
       // Ne pas vider les champs pour permettre à l'utilisateur de voir le message de succès
@@ -140,6 +142,27 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
             </div>
 
             <div>
+              <label htmlFor="city" className="block text-sm font-medium text-slate-700 mb-2">
+                Ville
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <select
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition appearance-none bg-white"
+                  required
+                >
+                  <option value="" disabled>Sélectionnez votre ville</option>
+                  {IVORIAN_CITIES.map((cityName) => (
+                    <option key={cityName} value={cityName}>{cityName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                 Email
               </label>
@@ -165,14 +188,21 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition"
+                  className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-green-500 focus:border-ci-green-500 outline-none transition"
                   placeholder="••••••••"
                   required
                   minLength={6}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
@@ -184,11 +214,10 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                 <button
                   type="button"
                   onClick={() => setRole('tenant')}
-                  className={`p-4 border-2 rounded-lg transition-all ${
-                    role === 'tenant'
-                      ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`p-4 border-2 rounded-lg transition-all ${role === 'tenant'
+                    ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   <Users className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold text-sm">Locataire</div>
@@ -198,11 +227,10 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                 <button
                   type="button"
                   onClick={() => setRole('owner')}
-                  className={`p-4 border-2 rounded-lg transition-all ${
-                    role === 'owner'
-                      ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`p-4 border-2 rounded-lg transition-all ${role === 'owner'
+                    ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   <Home className="w-6 h-6 mx-auto mb-2" />
                   <div className="font-semibold text-sm">Propriétaire</div>
@@ -221,11 +249,10 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                     <button
                       type="button"
                       onClick={() => setOwnerType('particulier')}
-                      className={`p-3 border-2 rounded-lg transition-all ${
-                        ownerType === 'particulier'
-                          ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                      className={`p-3 border-2 rounded-lg transition-all ${ownerType === 'particulier'
+                        ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                        : 'border-slate-200 hover:border-slate-300'
+                        }`}
                     >
                       <User className="w-5 h-5 mx-auto mb-1" />
                       <div className="font-semibold text-sm">Particulier</div>
@@ -235,11 +262,10 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
                     <button
                       type="button"
                       onClick={() => setOwnerType('agent')}
-                      className={`p-3 border-2 rounded-lg transition-all ${
-                        ownerType === 'agent'
-                          ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                      className={`p-3 border-2 rounded-lg transition-all ${ownerType === 'agent'
+                        ? 'border-ci-green-500 bg-ci-green-50 text-ci-orange-700'
+                        : 'border-slate-200 hover:border-slate-300'
+                        }`}
                     >
                       <Home className="w-5 h-5 mx-auto mb-1" />
                       <div className="font-semibold text-sm">Agent</div>

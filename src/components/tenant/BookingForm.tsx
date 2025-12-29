@@ -152,7 +152,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
             </div>
 
             <button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => window.location.href = '/'}
               className="text-slate-600 hover:text-slate-900 font-medium hover:underline"
             >
               Retour au tableau de bord

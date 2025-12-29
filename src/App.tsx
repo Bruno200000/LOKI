@@ -8,6 +8,7 @@ import { PropertyDetailsModal } from './components/tenant/PropertyDetailsModal';
 import { BookingForm } from './components/tenant/BookingForm';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
+import { ResetPassword } from './components/auth/ResetPassword';
 import { OwnerDashboard } from './components/owner/OwnerDashboard';
 import { TenantDashboard } from './components/tenant/TenantDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
@@ -136,6 +137,7 @@ function AppContent() {
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
   const loginParam = urlParams.get('login');
+  const resetParam = urlParams.get('reset');
 
   // Handle view parameter logic
   useEffect(() => {
@@ -176,6 +178,11 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  // Handle Password Reset
+  if (resetParam === 'true') {
+    return <ResetPassword />;
   }
 
   // Handle URL-based routing FIRST - this should take priority over authentication logic

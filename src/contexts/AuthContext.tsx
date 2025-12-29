@@ -8,7 +8,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant', phone: string, ownerType?: 'particulier' | 'agent', mainActivityNeighborhood?: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, role: 'owner' | 'tenant', phone: string, city: string, ownerType?: 'particulier' | 'agent', mainActivityNeighborhood?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -74,12 +74,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const sanitizedName = SecurityUtils.sanitizeInput(fullName);
 
+            const phone = session.user.user_metadata?.phone || null;
+            const city = session.user.user_metadata?.city || null;
+            const role = session.user.user_metadata?.role || 'tenant';
+
             const { data: newProfile } = await supabase
               .from('profiles')
               .insert({
                 id: session.user.id,
                 full_name: sanitizedName,
-                role: 'tenant',
+                role: role,
+                phone: phone,
+                city: city,
+                email: session.user.email,
               })
               .select()
               .single();
@@ -116,12 +123,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const sanitizedName = SecurityUtils.sanitizeInput(fullName);
 
+            const phone = session.user.user_metadata?.phone || null;
+            const city = session.user.user_metadata?.city || null;
+            const role = session.user.user_metadata?.role || 'tenant';
+
             const { data: newProfile } = await supabase
               .from('profiles')
               .insert({
                 id: session.user.id,
                 full_name: sanitizedName,
-                role: 'tenant',
+                role: role,
+                phone: phone,
+                city: city,
+                email: session.user.email,
               })
               .select()
               .single();
@@ -147,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fullName: string,
     role: 'owner' | 'tenant',
     phone: string,
+    city: string,
     ownerType?: 'particulier' | 'agent',
     mainActivityNeighborhood?: string
   ) => {
@@ -176,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sanitizedEmail = SecurityUtils.sanitizeInput(email.toLowerCase());
     const sanitizedName = SecurityUtils.sanitizeInput(fullName);
     const sanitizedPhone = SecurityUtils.sanitizeInput(phone);
+    const sanitizedCity = SecurityUtils.sanitizeInput(city);
 
     const { data, error } = await supabase.auth.signUp({
       email: sanitizedEmail,
@@ -185,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: sanitizedName,
           role: role,
           phone: sanitizedPhone,
+          city: sanitizedCity,
         },
       },
     });
@@ -206,6 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role,
             email: sanitizedEmail,
             phone: sanitizedPhone,
+            city: sanitizedCity,
             owner_type: role === 'owner' ? ownerType : null,
             main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
           },
