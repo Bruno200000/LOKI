@@ -126,11 +126,12 @@ function AppContent() {
 
   // Handle URL-based routing first
   const fullPath = window.location.pathname;
-  // Normalize path: skip potential base path if hosted on subdirectory, remove trailing slash, ensure starts with /
-  const currentPath = '/' + (fullPath.split('/').pop() || '');
-  const isAbout = fullPath.endsWith('/about') || fullPath.endsWith('/about/');
-  const isContact = fullPath.endsWith('/contact') || fullPath.endsWith('/contact/');
-  const isDemo = fullPath.endsWith('/demo') || fullPath.endsWith('/demo/');
+  // Normalize path: ignore trailing slashes but keep the full structure
+  const currentPath = fullPath.replace(/\/$/, '') || '/';
+
+  const isAbout = currentPath === '/about';
+  const isContact = currentPath === '/contact';
+  const isDemo = currentPath === '/demo';
 
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');

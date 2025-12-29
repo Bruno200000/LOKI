@@ -146,10 +146,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
               <a href="/#pricing" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Tarifs
               </a>
-              <button onClick={() => window.location.href = './about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <button onClick={() => window.location.href = '/about'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 À propos
               </button>
-              <button onClick={() => window.location.href = './contact'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
+              <button onClick={() => window.location.href = '/contact'} className="text-slate-600 hover:text-slate-900 font-medium transition-colors">
                 Contact
               </button>
               {showBackToDashboard && (
@@ -204,7 +204,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </a>
                 <button
                   onClick={() => {
-                    window.location.href = './about';
+                    window.location.href = '/about';
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
@@ -213,7 +213,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 </button>
                 <button
                   onClick={() => {
-                    window.location.href = './contact';
+                    window.location.href = '/contact';
                     setMobileMenuOpen(false);
                   }}
                   className="block w-full text-left px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg font-medium transition-colors"
@@ -275,7 +275,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
               <button
-                onClick={() => window.location.href = './demo'}
+                onClick={() => window.location.href = '/demo'}
                 className="inline-flex items-center border-2 border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 px-8 py-4 rounded-xl font-semibold text-lg transition-all w-full sm:w-auto justify-center bg-white hover:bg-slate-50 transform hover:scale-105"
               >
                 Voir le démo

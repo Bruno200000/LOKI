@@ -14,8 +14,7 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
   };
 
   const handleNavigation = (path: string) => {
-    const target = path === '/' ? './' : path.startsWith('/') ? '.' + path : path;
-    window.location.href = target;
+    window.location.href = path;
   };
 
   return (
