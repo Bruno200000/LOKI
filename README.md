@@ -59,8 +59,8 @@ npm install
 
 1. **Connecter le repository** à Netlify
 2. **Configuration des variables d'environnement** (obligatoire) :
-   - `VITE_SUPABASE_URL`: https://oliizzwqbmlpeqozhofm.supabase.co
-   - `VITE_SUPABASE_ANON_KEY`: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
+   - `VITE_SUPABASE_URL`: https://tcvvczdwchowscaaeezd.supabase.co
+   - `VITE_SUPABASE_ANON_KEY`: your_anon_key_here
 3. **Version Node.js** : Changer vers Node 18 ou 20 si des erreurs de build persistent
 4. **Build Command** : `npm run build:netlify` (sans vérifications de sécurité)
 5. **Publish Directory** : `dist`
@@ -100,7 +100,7 @@ rm -rf node_modules package-lock.json
 npm install
 
 # Build avec variables d'environnement
-VITE_SUPABASE_URL=https://oliizzwqbmlpeqozhofm.supabase.co \
+VITE_SUPABASE_URL=https://tcvvczdwchowscaaeezd.supabase.co \
 VITE_SUPABASE_ANON_KEY=your_anon_key_here \
 npm run build
 ```

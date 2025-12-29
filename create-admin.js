@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 // Charger les variables d'environnement
 dotenv.config();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://oliizzwqbmlpeqozhofm.supabase.co';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://tcvvczdwchowscaaeezd.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseServiceKey) {

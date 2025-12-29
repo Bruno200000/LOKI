@@ -4,8 +4,8 @@ import * as dotenv from 'dotenv';
 // Charger les variables d'environnement
 dotenv.config();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://oliizzwqbmlpeqozhofm.supabase.co';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://tcvvczdwchowscaaeezd.supabase.co';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

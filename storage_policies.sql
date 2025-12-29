@@ -146,7 +146,7 @@ WHERE tablename = 'objects'
 
 -- Vérifier que les fichiers sont accessibles
 SELECT
-  'https://oliizzwqbmlpeqozhofm.supabase.co/storage/v1/object/public/house-media/' || name as public_url,
+  'https://tcvvczdwchowscaaeezd.supabase.co/storage/v1/object/public/house-media/' || name as public_url,
   name,
   bucket_id
 FROM storage.objects

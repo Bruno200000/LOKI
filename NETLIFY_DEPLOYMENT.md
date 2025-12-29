@@ -14,8 +14,8 @@ Le build Netlify échoue avec "exit code 1" mais sans stack trace détaillé.
 Dans Netlify Dashboard > Site Settings > Build & Deploy > Environment Variables :
 
 ```
-VITE_SUPABASE_URL = https://oliizzwqbmlpeqozhofm.supabase.co
-VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
+VITE_SUPABASE_URL = https://tcvvczdwchowscaaeezd.supabase.co
+VITE_SUPABASE_ANON_KEY = your_anon_key_here
 ```
 
 ### 2. Changer la version Node.js
@@ -37,8 +37,8 @@ rm -rf node_modules package-lock.json
 npm install
 
 # Build avec variables d'environnement
-VITE_SUPABASE_URL=https://oliizzwqbmlpeqozhofm.supabase.co \
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs \
+VITE_SUPABASE_URL=https://tcvvczdwchowscaaeezd.supabase.co \
+VITE_SUPABASE_ANON_KEY=your_anon_key_here \
 npm run build
 ```
 
@@ -57,8 +57,8 @@ Le fichier netlify.toml configure automatiquement :
 - SPA redirects pour le routing client-side
 
 Environment Variables:
-- VITE_SUPABASE_URL: https://oliizzwqbmlpeqozhofm.supabase.co
-- VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9saWl6endxYm1scGVxb3pob2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzOTU5MzYsImV4cCI6MjA3NDk3MTkzNn0.G_E-bPzPZXEMbKZvUdhmaF3X1uH6_HVibVXiA42XhDs
+- VITE_SUPABASE_URL: https://tcvvczdwchowscaaeezd.supabase.co
+- VITE_SUPABASE_ANON_KEY: your_anon_key_here
 ```
 
 ### 5. Debugging
