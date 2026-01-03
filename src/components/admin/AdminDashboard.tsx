@@ -122,6 +122,33 @@ export const AdminDashboard: React.FC = () => {
   const fetchHouses = async () => {
     try {
       console.log('🔍 Récupération des maisons...');
+      console.log('👤 User profile:', profile);
+      
+      // Try RPC function first (bypasses RLS)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_houses_for_admin');
+      
+      if (!rpcError && rpcData) {
+        console.log('✅ Maisons récupérées via RPC:', rpcData.length);
+        setHouses(rpcData);
+        return;
+      }
+      
+      console.log('⚠️ RPC failed, falling back to direct query');
+      
+      // First try without the join to see if houses exist
+      const { data: housesOnly, error: housesError } = await supabase
+        .from('houses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('🏠 Houses without join:', housesOnly?.length, housesError);
+      console.log('🏠 Houses data:', housesOnly);
+      
+      if (housesError) {
+        console.error('❌ Erreur houses (simple):', housesError);
+      }
+
+      // Then try with the join
       const { data, error } = await supabase
         .from('houses')
         .select(`
@@ -136,11 +163,17 @@ export const AdminDashboard: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erreur houses:', error);
-        throw error;
+        console.error('❌ Erreur houses (with join):', error);
+        // If join fails, use houses without owner info
+        if (housesOnly) {
+          console.log('✅ Using houses without owner info:', housesOnly.length);
+          setHouses(housesOnly);
+        }
+        return;
       }
 
-      console.log('✅ Maisons récupérées:', data?.length);
+      console.log('✅ Maisons récupérées avec jointure:', data?.length);
+      console.log('🏠 Houses with owners:', data);
       setHouses(data || []);
     } catch (error) {
       console.error('❌ Erreur fetchHouses:', error);
@@ -984,6 +1017,12 @@ export const AdminDashboard: React.FC = () => {
                         Disponibles: <span className="font-semibold text-green-600">{houses.filter(h => h.status === 'available').length}</span> | 
                         Prises: <span className="font-semibold text-red-600">{houses.filter(h => h.status === 'taken').length}</span>
                       </div>
+                      <button
+                        onClick={() => fetchHouses()}
+                        className="px-3 py-1.5 text-sm bg-ci-orange-600 text-white rounded-lg hover:bg-ci-orange-700 transition-colors"
+                      >
+                        Rafraîchir
+                      </button>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
