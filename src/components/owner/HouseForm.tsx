@@ -34,9 +34,9 @@ const BOUAKE_NEIGHBORHOODS = [
   "Liberté",
   "Lycée Municipal",
   "Mamianou",
-  "N’Dakro",
-  "N’Gattakro",
-  "N’Gouatanoukro",
+  "N'Dakro",
+  "N'Gattakro",
+  "N'Gouatanoukro",
   "Niankoukro",
   "Nimbo",
   "Sokoura",
@@ -67,18 +67,18 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
       description: '',
       price: '',
       type: propertyType,
-      status: 'available' as 'available' | 'taken' | 'pending',
+      status: 'available' as 'available' | 'taken',
       location: '',
       city: 'Bouaké',
       neighborhood: '',
-      
+
       // Médias
       image_url: '',
       video_url: '',
       virtual_tour_url: '',
       photos: [] as string[],
       videos: [] as string[],
-      
+
       // Caractéristiques générales
       area_sqm: '',
       parking: false,
@@ -205,7 +205,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
           pool: house.pool || false,
           alarm_system: house.alarm_system || false,
           interphone: house.interphone || false,
-        });
+        } as any);
       } else if (house.type === 'land') {
         setFormData({
           ...baseFormData,
@@ -214,7 +214,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
           has_electricity: house.has_electricity || false,
           is_flat: house.is_flat || false,
           has_fence: house.has_fence || false,
-        });
+        } as any);
       } else if (house.type === 'shop') {
         setFormData({
           ...baseFormData,
@@ -224,9 +224,9 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
           has_showcase: house.has_showcase || false,
           has_ac: house.has_ac || false,
           has_security_system: house.has_security_system || false,
-        });
+        } as any);
       } else {
-        setFormData(baseFormData);
+        setFormData(baseFormData as any);
       }
     }
   }, [house, propertyType]);
@@ -364,75 +364,94 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
     setSuccess(false);
     setLoading(true);
 
+    const getSupabaseErrorMessage = (err: unknown): string => {
+      if (!err || typeof err !== 'object') return 'Erreur lors de la sauvegarde';
+      const anyErr = err as any;
+      const parts = [anyErr.message, anyErr.details, anyErr.hint, anyErr.code].filter(Boolean);
+      return parts.length > 0 ? String(parts.join(' - ')) : 'Erreur lors de la sauvegarde';
+    };
+
     try {
       if (!profile) throw new Error('Vous devez être connecté pour ajouter une propriété');
 
-      // Données de base communes à tous les types de propriétés
-      const baseData: Partial<House> = {
+      const parsedPrice = Number(formData.price);
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        throw new Error('Veuillez saisir un prix valide (strictement supérieur à 0)');
+      }
+
+      const parsedArea = formData.area_sqm ? Number(formData.area_sqm) : null;
+      if (parsedArea !== null && (!Number.isFinite(parsedArea) || parsedArea <= 0)) {
+        throw new Error('Veuillez saisir une surface valide (strictement supérieure à 0)');
+      }
+
+      // Données de base communes à tous les types de propriété
+      const propertyData: Record<string, unknown> = {
         owner_id: profile.id,
         title: formData.title,
-        description: formData.description,
-        price: parseFloat(formData.price) || 0,
+        description: formData.description || null,
+        price: parsedPrice,
         status: formData.status,
         type: propertyType,
-        location: formData.location,
+        property_type: propertyType, // Alias pour la BDD
         city: formData.city,
         neighborhood: formData.neighborhood || null,
-        
+        area_sqm: parsedArea,
+
         // Médias
         image_url: formData.image_url || null,
         video_url: formData.video_url || null,
         virtual_tour_url: formData.virtual_tour_url || null,
         photos: formData.photos.length > 0 ? formData.photos : null,
-        videos: formData.videos || null,
-        
-        // Caractéristiques générales
-        area_sqm: formData.area_sqm ? parseFloat(formData.area_sqm) : null,
-        parking: formData.parking,
-        security_cameras: formData.security_cameras,
-        guardian: formData.guardian,
+
+        // Équipements généraux
+        parking: formData.parking || false,
+        security_cameras: formData.security_cameras || false,
+        guardian: formData.guardian || false,
+        furnished: formData.furnished || false,
       };
 
-      // Ajout des champs spécifiques au type de propriété
-      let propertyData = { ...baseData };
+      // Ajouter le floor si présent
+      const parsedFloor = (formData as any).floor ? Number((formData as any).floor) : null;
+      if (parsedFloor !== null) {
+        propertyData.floor = parsedFloor;
+      }
 
+      // Caractéristiques spécifiques aux résidences et maisons
       if (propertyType === 'residence' || propertyType === 'house') {
-        propertyData = {
-          ...propertyData,
-          bedrooms: (formData as any).bedrooms ? Number((formData as any).bedrooms) : null,
-          bathrooms: (formData as any).bathrooms ? Number((formData as any).bathrooms) : null,
-          furnished: (formData as any).furnished,
-          floor: (formData as any).floor ? Number((formData as any).floor) : null,
-          air_conditioning: (formData as any).air_conditioning,
-          heating: (formData as any).heating,
-          hot_water: (formData as any).hot_water,
-          internet: (formData as any).internet,
-          elevator: (formData as any).elevator,
-          balcony: (formData as any).balcony,
-          garden: (formData as any).garden,
-          pool: (formData as any).pool,
-          alarm_system: (formData as any).alarm_system,
-          interphone: (formData as any).interphone,
-        };
-      } else if (propertyType === 'land') {
-        propertyData = {
-          ...propertyData,
-          land_type: (formData as any).land_type,
-          has_water: (formData as any).has_water,
-          has_electricity: (formData as any).has_electricity,
-          is_flat: (formData as any).is_flat,
-          has_fence: (formData as any).has_fence,
-        };
-      } else if (propertyType === 'shop') {
-        propertyData = {
-          ...propertyData,
-          shop_type: (formData as any).shop_type,
-          has_toilet: (formData as any).has_toilet,
-          has_storage: (formData as any).has_storage,
-          has_showcase: (formData as any).has_showcase,
-          has_ac: (formData as any).has_ac,
-          has_security_system: (formData as any).has_security_system,
-        };
+        const bedrooms = (formData as any).bedrooms ? Number((formData as any).bedrooms) : null;
+        const bathrooms = (formData as any).bathrooms ? Number((formData as any).bathrooms) : null;
+
+        propertyData.bedrooms = bedrooms;
+        propertyData.bathrooms = bathrooms;
+        propertyData.air_conditioning = (formData as any).air_conditioning || false;
+        propertyData.heating = (formData as any).heating || false;
+        propertyData.hot_water = (formData as any).hot_water || false;
+        propertyData.internet = (formData as any).internet || false;
+        propertyData.elevator = (formData as any).elevator || false;
+        propertyData.balcony = (formData as any).balcony || false;
+        propertyData.garden = (formData as any).garden || false;
+        propertyData.pool = (formData as any).pool || false;
+        propertyData.alarm_system = (formData as any).alarm_system || false;
+        propertyData.interphone = (formData as any).interphone || false;
+      }
+
+      // Caractéristiques spécifiques aux terrains
+      if (propertyType === 'land') {
+        propertyData.land_type = (formData as any).land_type || 'residential';
+        propertyData.has_water = (formData as any).has_water || false;
+        propertyData.has_electricity = (formData as any).has_electricity || false;
+        propertyData.is_flat = (formData as any).is_flat || false;
+        propertyData.has_fence = (formData as any).has_fence || false;
+      }
+
+      // Caractéristiques spécifiques aux commerces
+      if (propertyType === 'shop') {
+        propertyData.shop_type = (formData as any).shop_type || 'retail';
+        propertyData.has_toilet = (formData as any).has_toilet || false;
+        propertyData.has_storage = (formData as any).has_storage || false;
+        propertyData.has_showcase = (formData as any).has_showcase || false;
+        propertyData.has_ac = (formData as any).has_ac || false;
+        propertyData.has_security_system = (formData as any).has_security_system || false;
       }
 
       if (house) {
@@ -459,7 +478,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
       }, 1500);
     } catch (err) {
       console.error('Error saving property:', err);
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+      setError(getSupabaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -608,13 +627,12 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'available' | 'taken' | 'pending' })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'available' | 'taken' })}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
                 required
               >
                 <option value="available">Disponible</option>
                 <option value="taken">Pris</option>
-                <option value="pending">En attente</option>
               </select>
             </div>
 
@@ -647,9 +665,8 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                 />
                 <label
                   htmlFor="video-upload"
-                  className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${
-                    uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   {uploadingVideo ? (
                     <>
@@ -689,13 +706,13 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
               </div>
             </div>
 
-            
-            
+
+
             {/* Champs spécifiques aux maisons et résidences */}
             {(propertyType === 'house' || propertyType === 'residence') && (
               <div className="bg-slate-50 p-6 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du logement</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Chambres</label>
@@ -804,7 +821,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
             {propertyType === 'land' && (
               <div className="bg-slate-50 p-6 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du terrain</h3>
-                
+
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Type de terrain</label>
                   <select
@@ -850,7 +867,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
             {propertyType === 'shop' && (
               <div className="bg-slate-50 p-6 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Caractéristiques du local commercial</h3>
-                
+
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Type de commerce</label>
                   <select
@@ -912,7 +929,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                     </label>
                   </div>
                 </div>
-                
+
                 <div>
                   <h4 className="text-md font-medium text-slate-800 mb-3">Sécurité</h4>
                   <div className="space-y-3">
@@ -1004,9 +1021,8 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                 />
                 <label
                   htmlFor="multiple-image-upload"
-                  className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${
-                    uploading ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${uploading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   {uploading ? (
                     <>

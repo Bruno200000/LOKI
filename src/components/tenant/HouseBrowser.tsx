@@ -100,7 +100,7 @@ export const HouseBrowser: React.FC = () => {
       filtered = filtered.filter(
         (house) =>
           house.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          house.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (house.location && house.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (house.neighborhood && house.neighborhood.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (house.description && house.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );

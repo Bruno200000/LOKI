@@ -28,12 +28,13 @@ export interface House {
   updated_at?: string;
   status: 'available' | 'taken' | 'pending';
   type: 'residence' | 'house' | 'land' | 'shop';
+  property_type?: string | null; // Alias pour compatibility avec la BDD
 
   // Informations de base
   title: string;
   description: string | null;
   price: number;
-  location: string;
+  location?: string | null; // Location n'existe pas dans la BDD mais est utilisé dans le front
   city: string;
   neighborhood?: string | null;
   area_sqm?: number | null;
@@ -44,7 +45,7 @@ export interface House {
   virtual_tour_url?: string | null;
   photos?: string[] | null;
   videos?: string[] | null;
-  image_data?: string | null;
+  image_data?: any | null; // bytea dans la BDD
   amenities?: string[] | null;
 
   // Caractéristiques générales
