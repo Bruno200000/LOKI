@@ -123,14 +123,63 @@ export const AdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Récupération des maisons...');
       console.log('👤 User profile:', profile);
+      console.log('👤 User role:', profile?.role);
       
-      // Try RPC function first (bypasses RLS)
+      // Check if user is admin
+      if (!profile || profile.role !== 'admin') {
+        console.log('⚠️ User is not admin, using regular query');
+        // Use regular query for non-admin users
+        const { data, error } = await supabase
+          .from('houses')
+          .select(`
+            *,
+            owner:profiles (
+              id,
+              full_name,
+              email,
+              phone
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('❌ Erreur houses (regular):', error);
+        } else {
+          console.log('✅ Maisons récupérées (regular):', data?.length);
+          setHouses(data || []);
+        }
+        return;
+      }
+      
+      // Try RPC function first (bypasses RLS) - only for admins
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_houses_for_admin');
       
-      if (!rpcError && rpcData) {
+      console.log('🔧 RPC Response:', { data: rpcData, error: rpcError });
+      
+      if (!rpcError && rpcData && rpcData.length > 0) {
         console.log('✅ Maisons récupérées via RPC:', rpcData.length);
-        setHouses(rpcData);
+        console.log('🏠 RPC Data sample:', rpcData[0]);
+        
+        // Map RPC data to match House interface
+        const mappedHouses = rpcData.map((house: any) => ({
+          ...house,
+          owner: house.owner_full_name ? {
+            id: house.owner_id_2,
+            full_name: house.owner_full_name,
+            email: house.owner_email,
+            phone: house.owner_phone
+          } : null
+        }));
+        
+        console.log('🏠 Mapped houses:', mappedHouses[0]);
+        setHouses(mappedHouses);
         return;
+      }
+      
+      if (rpcError) {
+        console.error('❌ RPC Error details:', rpcError);
+      } else if (!rpcData || rpcData.length === 0) {
+        console.log('ℹ️ RPC returned empty data');
       }
       
       console.log('⚠️ RPC failed, falling back to direct query');
