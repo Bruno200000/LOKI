@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, House, Booking } from '../../lib/supabase';
-import { 
-  Plus, 
-  Home, 
-  Calendar, 
-  DollarSign, 
-  LogOut, 
-  CreditCard as Edit, 
-  Trash2, 
-  Eye, 
-  ExternalLink, 
-  Camera, 
-  Play, 
-  TrendingUp, 
-  CheckCircle, 
+import {
+  Plus,
+  Home,
+  Calendar,
+  DollarSign,
+  LogOut,
+  CreditCard as Edit,
+  Trash2,
+  Eye,
+  ExternalLink,
+  Camera,
+  Play,
+  TrendingUp,
+  CheckCircle,
   Clock,
   User,
   LayoutDashboard,
@@ -166,7 +166,7 @@ export const OwnerDashboard: React.FC = () => {
 
   const fetchHouses = async () => {
     if (!profile?.id) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -236,7 +236,7 @@ export const OwnerDashboard: React.FC = () => {
 
       const { data: housesData, error: housesError } = await supabase
         .from('houses')
-        .select('id, title, address, city')
+        .select('id, title, neighborhood, city')
         .in('id', Array.from(houseIds));
 
       if (housesError) throw housesError;
@@ -308,7 +308,7 @@ export const OwnerDashboard: React.FC = () => {
         const bookingDate = new Date(b.created_at);
         const now = new Date();
         return bookingDate.getMonth() === now.getMonth() &&
-               bookingDate.getFullYear() === now.getFullYear();
+          bookingDate.getFullYear() === now.getFullYear();
       })
       .reduce((sum, b) => sum + (b.commission_fee || 0), 0),
     occupancyRate: houses.length > 0 ? Math.round((houses.filter(h => h.status === 'taken').length / houses.length) * 100) : 0,
@@ -355,12 +355,11 @@ export const OwnerDashboard: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className={`w-4 h-4 rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-500' :
-                            booking.status === 'pending' ? 'bg-yellow-500' :
-                            booking.status === 'cancelled' ? 'bg-red-500' :
-                            'bg-blue-500'
-                          }`}></div>
+                          <div className={`w-4 h-4 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                              booking.status === 'pending' ? 'bg-yellow-500' :
+                                booking.status === 'cancelled' ? 'bg-red-500' :
+                                  'bg-blue-500'
+                            }`}></div>
                           <div>
                             <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
                             <p className="text-sm text-slate-600">
@@ -376,18 +375,17 @@ export const OwnerDashboard: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                  'bg-blue-100 text-blue-800'
+                            }`}>
                             {booking.status === 'confirmed' ? 'Confirmée' :
-                             booking.status === 'pending' ? 'En attente' :
-                             booking.status === 'cancelled' ? 'Annulée' :
-                             booking.status === 'active' ? 'Active' :
-                             booking.status === 'completed' ? 'Terminée' :
-                             booking.status}
+                              booking.status === 'pending' ? 'En attente' :
+                                booking.status === 'cancelled' ? 'Annulée' :
+                                  booking.status === 'active' ? 'Active' :
+                                    booking.status === 'completed' ? 'Terminée' :
+                                      booking.status}
                           </span>
                           {booking.commission_fee && (
                             <span className="text-sm font-medium text-slate-700">
@@ -468,12 +466,11 @@ export const OwnerDashboard: React.FC = () => {
                               onClick={() => handleContactTenant(booking)}
                             >
                               <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  booking.status === 'confirmed' ? 'bg-green-500' :
-                                  booking.status === 'pending' ? 'bg-yellow-500' :
-                                  booking.status === 'cancelled' ? 'bg-red-500' :
-                                  'bg-blue-500'
-                                }`}></div>
+                                <div className={`w-3 h-3 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                                    booking.status === 'pending' ? 'bg-yellow-500' :
+                                      booking.status === 'cancelled' ? 'bg-red-500' :
+                                        'bg-blue-500'
+                                  }`}></div>
                                 <div>
                                   <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
                                   <p className="text-sm text-slate-600">
@@ -494,18 +491,17 @@ export const OwnerDashboard: React.FC = () => {
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                  'bg-blue-100 text-blue-800'
-                                }`}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                      booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                        'bg-blue-100 text-blue-800'
+                                  }`}>
                                   {booking.status === 'confirmed' ? 'Confirmée' :
-                                   booking.status === 'pending' ? 'En attente' :
-                                   booking.status === 'cancelled' ? 'Annulée' :
-                                   booking.status === 'active' ? 'Active' :
-                                   booking.status === 'completed' ? 'Terminée' :
-                                   booking.status}
+                                    booking.status === 'pending' ? 'En attente' :
+                                      booking.status === 'cancelled' ? 'Annulée' :
+                                        booking.status === 'active' ? 'Active' :
+                                          booking.status === 'completed' ? 'Terminée' :
+                                            booking.status}
                                 </span>
 
                                 {booking.commission_fee && (
@@ -541,9 +537,8 @@ export const OwnerDashboard: React.FC = () => {
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:hidden`}
+        className={`fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:hidden`}
       >
         <div className="h-full flex flex-col">
           <div className="p-4 border-b border-slate-200">
@@ -572,9 +567,8 @@ export const OwnerDashboard: React.FC = () => {
                 setCurrentView('dashboard');
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${
-                currentView === ('dashboard' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${currentView === ('dashboard' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                }`}
             >
               <LayoutDashboard className="w-5 h-5" />
               Tableau de bord
@@ -584,9 +578,8 @@ export const OwnerDashboard: React.FC = () => {
                 setCurrentView('profile');
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${
-                currentView === ('profile' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${currentView === ('profile' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                }`}
             >
               <User className="w-5 h-5" />
               Mon profil
@@ -639,11 +632,10 @@ export const OwnerDashboard: React.FC = () => {
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={() => setCurrentView('profile' as DashboardView)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${
-                  currentView === ('profile' as DashboardView)
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${currentView === ('profile' as DashboardView)
                     ? 'bg-slate-100 text-slate-900'
                     : 'text-slate-700 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <Edit className="w-4 h-4" />
                 Modifier profil
@@ -810,7 +802,7 @@ export const OwnerDashboard: React.FC = () => {
           {/* Background animations */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-ci-green-200/20 to-ci-orange-200/20 rounded-full blur-3xl opacity-40 animate-pulse"></div>
-            <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/20 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/20 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
           </div>
 
           {/* Welcome Section */}
@@ -843,9 +835,8 @@ export const OwnerDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
             <div
               onClick={() => handleCardClick('total')}
-              className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${
-                selectedCardFilter === 'total' ? 'ring-2 ring-ci-orange-500 bg-ci-orange-50' : ''
-              }`}
+              className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${selectedCardFilter === 'total' ? 'ring-2 ring-ci-orange-500 bg-ci-orange-50' : ''
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -861,9 +852,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('available')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'available' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'available' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -878,9 +868,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('occupied')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'occupied' ? 'ring-2 ring-amber-500 bg-amber-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'occupied' ? 'ring-2 ring-amber-500 bg-amber-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -895,9 +884,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('occupancy')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'occupancy' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'occupancy' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -914,9 +902,8 @@ export const OwnerDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div
               onClick={() => handleCardClick('total')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'total' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'total' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -931,9 +918,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('active')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'active' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'active' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -948,9 +934,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('pending')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -965,9 +950,8 @@ export const OwnerDashboard: React.FC = () => {
 
             <div
               onClick={() => handleCardClick('revenue')}
-              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${
-                selectedCardFilter === 'revenue' ? 'ring-2 ring-emerald-500 bg-emerald-50' : 'hover:shadow-lg'
-              }`}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'revenue' ? 'ring-2 ring-emerald-500 bg-emerald-50' : 'hover:shadow-lg'
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -1003,12 +987,11 @@ export const OwnerDashboard: React.FC = () => {
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${
-                              booking.status === 'confirmed' ? 'bg-green-500' :
-                              booking.status === 'pending' ? 'bg-yellow-500' :
-                              booking.status === 'cancelled' ? 'bg-red-500' :
-                              'bg-blue-500'
-                            }`}></div>
+                            <div className={`w-3 h-3 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                                booking.status === 'pending' ? 'bg-yellow-500' :
+                                  booking.status === 'cancelled' ? 'bg-red-500' :
+                                    'bg-blue-500'
+                              }`}></div>
                             <div>
                               <p className="font-medium text-slate-900 group-hover:text-ci-orange-600 transition">
                                 {house?.title || 'Propriété inconnue'}
@@ -1020,18 +1003,17 @@ export const OwnerDashboard: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                  'bg-blue-100 text-blue-800'
+                            }`}>
                             {booking.status === 'confirmed' ? 'Confirmée' :
-                             booking.status === 'pending' ? 'En attente' :
-                             booking.status === 'cancelled' ? 'Annulée' :
-                             booking.status === 'active' ? 'Active' :
-                             booking.status === 'completed' ? 'Terminée' :
-                             booking.status}
+                              booking.status === 'pending' ? 'En attente' :
+                                booking.status === 'cancelled' ? 'Annulée' :
+                                  booking.status === 'active' ? 'Active' :
+                                    booking.status === 'completed' ? 'Terminée' :
+                                      booking.status}
                           </span>
                           {booking.commission_fee && (
                             <span className="text-sm font-medium text-slate-700">
@@ -1142,11 +1124,10 @@ export const OwnerDashboard: React.FC = () => {
                     )}
                     <div className="absolute top-3 right-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          house.status === 'available'
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${house.status === 'available'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
-                        }`}
+                          }`}
                       >
                         {house.status === 'available' ? 'Disponible' : 'Pris'}
                       </span>

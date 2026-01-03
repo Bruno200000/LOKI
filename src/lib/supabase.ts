@@ -135,7 +135,7 @@ export interface Booking {
   house_info?: {
     id: string;
     title: string;
-    address: string;
+    neighborhood?: string | null;
     city: string;
     type?: string | null;
   } | null;
