@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase, PropertyContact } from '../../lib/supabase';
-import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle } from 'lucide-react';
+import { supabase, PropertyContact, House } from '../../lib/supabase';
+import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle, Star, Trash2, Edit, Eye } from 'lucide-react';
 
 interface Stats {
   totalOwners: number;
@@ -60,6 +60,16 @@ interface Booking {
   house_info?: { id: string; title?: string };
 }
 
+interface HouseWithOwner extends House {
+  owner?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+  featured?: boolean;
+}
+
 interface ChartData {
   name: string;
   value: number;
@@ -84,10 +94,11 @@ export const AdminDashboard: React.FC = () => {
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [houses, setHouses] = useState<HouseWithOwner[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [propertyContacts, setPropertyContacts] = useState<PropertyContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'bookings' | 'contacts' | 'analytics' | 'commissions' | 'admins'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'houses' | 'bookings' | 'contacts' | 'analytics' | 'commissions' | 'admins'>('overview');
   const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '', phone: '' });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -99,6 +110,7 @@ export const AdminDashboard: React.FC = () => {
         fetchStats(),
         fetchTransactions(),
         fetchUsers(),
+        fetchHouses(),
         fetchBookingsWithNames(),
         fetchPropertyContacts()
       ]);
@@ -106,6 +118,34 @@ export const AdminDashboard: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  const fetchHouses = async () => {
+    try {
+      console.log('🔍 Récupération des maisons...');
+      const { data, error } = await supabase
+        .from('houses')
+        .select(`
+          *,
+          owner:profiles (
+            id,
+            full_name,
+            email,
+            phone
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erreur houses:', error);
+        throw error;
+      }
+
+      console.log('✅ Maisons récupérées:', data?.length);
+      setHouses(data || []);
+    } catch (error) {
+      console.error('❌ Erreur fetchHouses:', error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -448,6 +488,60 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const deleteHouse = async (houseId: number, houseTitle: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la maison "${houseTitle}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Suppression de la maison:', houseId);
+      const { error } = await supabase
+        .from('houses')
+        .delete()
+        .eq('id', houseId);
+
+      if (error) {
+        console.error('❌ Erreur suppression maison:', error);
+        throw error;
+      }
+
+      console.log('✅ Maison supprimée avec succès');
+      alert('Maison supprimée avec succès');
+      fetchHouses(); // Rafraîchir la liste
+      fetchStats(); // Mettre à jour les stats
+    } catch (error: any) {
+      console.error('❌ Erreur deleteHouse:', error);
+      alert(error.message || 'Erreur lors de la suppression de la maison');
+    }
+  };
+
+  const toggleFeatured = async (houseId: number, currentFeatured: boolean) => {
+    try {
+      console.log('⭐ Mise à jour statut featured:', houseId, !currentFeatured);
+      const { error } = await supabase
+        .from('houses')
+        .update({ featured: !currentFeatured })
+        .eq('id', houseId);
+
+      if (error) {
+        console.error('❌ Erreur mise à jour featured:', error);
+        // Si le champ featured n'existe pas, on l'ignore silencieusement
+        if (error.message?.includes('column') || error.message?.includes('field')) {
+          console.warn('⚠️ Le champ "featured" n\'existe pas dans la table houses');
+          alert('La fonctionnalité "Mettre en vedette" n\'est pas encore disponible. Contactez l\'administrateur pour ajouter le champ "featured" à la base de données.');
+          return;
+        }
+        throw error;
+      }
+
+      console.log('✅ Statut featured mis à jour');
+      fetchHouses(); // Rafraîchir la liste
+    } catch (error: any) {
+      console.error('❌ Erreur toggleFeatured:', error);
+      alert(error.message || 'Erreur lors de la mise à jour du statut featured');
+    }
+  };
+
   const goToPublicSite = () => {
     window.location.href = '/?view=public';
   };
@@ -520,6 +614,16 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <Users className="w-4 h-4 inline mr-2" />
                   Utilisateurs ({users.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('houses')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'houses'
+                    ? 'border-ci-orange-600 text-ci-orange-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    }`}
+                >
+                  <Home className="w-4 h-4 inline mr-2" />
+                  Maisons ({houses.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('bookings')}
@@ -862,6 +966,149 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-slate-600">Aucune demande enregistrée</p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'houses' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">Gestion des Maisons</h2>
+                      <p className="text-slate-600 mt-1">Toutes les propriétés de la plateforme</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-slate-600">
+                        Total: <span className="font-semibold text-slate-900">{houses.length}</span> | 
+                        Disponibles: <span className="font-semibold text-green-600">{houses.filter(h => h.status === 'available').length}</span> | 
+                        Prises: <span className="font-semibold text-red-600">{houses.filter(h => h.status === 'taken').length}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Propriété</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Propriétaire</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Localisation</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Prix</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-200">
+                        {houses.map((house) => (
+                          <tr key={house.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                {house.photos && house.photos.length > 0 ? (
+                                  <img 
+                                    src={house.photos[0]} 
+                                    alt={house.title}
+                                    className="w-12 h-12 rounded-lg object-cover border border-slate-200"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+                                    <Home className="w-6 h-6 text-slate-400" />
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-semibold text-slate-900">{house.title}</p>
+                                  <p className="text-xs text-slate-500">ID: {house.id}</p>
+                                  {house.bedrooms && (
+                                    <p className="text-xs text-slate-500">{house.bedrooms} chambres</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">
+                                  {house.owner?.full_name || 'N/A'}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {house.owner?.email || 'Email non disponible'}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                house.type === 'residence' ? 'bg-purple-100 text-purple-800' :
+                                house.type === 'house' ? 'bg-blue-100 text-blue-800' :
+                                house.type === 'land' ? 'bg-green-100 text-green-800' :
+                                'bg-orange-100 text-orange-800'
+                              }`}>
+                                {house.type === 'residence' ? 'Résidence' :
+                                 house.type === 'house' ? 'Maison' :
+                                 house.type === 'land' ? 'Terrain' : 'Magasin'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <div>
+                                <p className="font-medium">{house.city}</p>
+                                {house.neighborhood && (
+                                  <p className="text-xs text-slate-500">{house.neighborhood}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <p className="font-semibold">{house.price.toLocaleString()} FCFA</p>
+                              {house.area_sqm && (
+                                <p className="text-xs text-slate-500">{house.area_sqm} m²</p>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                house.status === 'available' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {house.status === 'available' ? 'Disponible' : 'Pris'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => toggleFeatured(house.id, house.featured || false)}
+                                  className={`p-1.5 rounded-lg transition-colors ${
+                                    house.featured 
+                                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                  }`}
+                                  title={house.featured ? "Retirer de la vedette" : "Mettre en vedette"}
+                                >
+                                  <Star className={`w-4 h-4 ${house.featured ? 'fill-current' : ''}`} />
+                                </button>
+                                <button
+                                  onClick={() => window.open(`/?view=house&id=${house.id}`, '_blank')}
+                                  className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                  title="Voir la maison"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => deleteHouse(house.id, house.title)}
+                                  className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                  title="Supprimer la maison"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {houses.length === 0 && (
+                      <div className="text-center py-12">
+                        <Home className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600">Aucune maison trouvée</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
