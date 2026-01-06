@@ -163,13 +163,6 @@ export const TenantDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button
-                type="button"
-                className="md:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100/80 focus:outline-none mr-2 transition-all duration-200"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
               <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-all duration-200 group">
                 <div className="w-10 h-10 bg-gradient-to-br from-ci-orange-600 to-ci-orange-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
                   <Home className="w-6 h-6 text-white" />
@@ -179,6 +172,16 @@ export const TenantDashboard: React.FC = () => {
                   <p className="text-xs text-slate-600">{DASHBOARD_CONFIG.brand.tagline}</p>
                 </div>
               </a>
+            </div>
+
+            <div className="flex items-center">
+              <button
+                type="button"
+                className="md:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100/80 focus:outline-none ml-2 transition-all duration-200"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
             </div>
 
             <div className="hidden md:flex items-center gap-4">
@@ -241,8 +244,8 @@ export const TenantDashboard: React.FC = () => {
                       <Home className="w-6 h-6 text-white" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-slate-800">{DASHBOARD_CONFIG.mobile.dashboardTitle}</p>
-                      <p className="text-xs text-slate-500">{DASHBOARD_CONFIG.brand.tagline}</p>
+                      <p className="text-sm font-medium text-slate-900">{DASHBOARD_CONFIG.mobile.dashboardTitle}</p>
+                      <p className="text-xs text-slate-600">{DASHBOARD_CONFIG.brand.tagline}</p>
                     </div>
                   </div>
                   <button
@@ -259,7 +262,7 @@ export const TenantDashboard: React.FC = () => {
                       setView('browse');
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-md ${view === 'browse' ? 'bg-ci-orange-50 text-ci-orange-700' : 'text-slate-700 hover:bg-slate-100'
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-md ${view === 'browse' ? 'bg-ci-orange-50 text-ci-orange-700' : 'text-slate-900 hover:bg-slate-100'
                       }`}
                   >
                     <Home className="mr-3 h-5 w-5" />
@@ -271,7 +274,7 @@ export const TenantDashboard: React.FC = () => {
                       setView('bookings');
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-md ${view === 'bookings' ? 'bg-ci-orange-50 text-ci-orange-700' : 'text-slate-700 hover:bg-slate-100'
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-md ${view === 'bookings' ? 'bg-ci-orange-50 text-ci-orange-700' : 'text-slate-900 hover:bg-slate-100'
                       }`}
                   >
                     <Calendar className="mr-3 h-5 w-5" />
@@ -283,7 +286,7 @@ export const TenantDashboard: React.FC = () => {
                       setView('profile');
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md"
+                    className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 rounded-md"
                   >
                     <User className="mr-3 h-5 w-5" />
                     {DASHBOARD_CONFIG.navigation.profile}
@@ -291,7 +294,7 @@ export const TenantDashboard: React.FC = () => {
 
                   <button
                     onClick={handleViewSite}
-                    className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md"
+                    className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-900 hover:bg-slate-100 rounded-md"
                   >
                     <ExternalLink className="mr-3 h-5 w-5" />
                     {DASHBOARD_CONFIG.navigation.viewSite}
