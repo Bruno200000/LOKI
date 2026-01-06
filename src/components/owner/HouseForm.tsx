@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, House } from '../../lib/supabase';
-import { X, AlertCircle, CheckCircle, Upload, Loader } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, Upload, Loader, FileText, Eye } from 'lucide-react';
 
 const BOUAKE_NEIGHBORHOODS = [
   "Aéroport",
@@ -78,6 +78,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
       virtual_tour_url: '',
       photos: [] as string[],
       videos: [] as string[],
+      description_documents: [] as Array<{url: string, name: string, type: 'image' | 'document'}>,
 
       // Caractéristiques générales
       area_sqm: '',
@@ -342,6 +343,83 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
     setFormData({ ...formData, photos: newPhotos });
   };
 
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const maxDocuments = 5;
+    const currentDocuments = (formData as any).description_documents?.length || 0;
+    const availableSlots = maxDocuments - currentDocuments;
+
+    if (files.length > availableSlots) {
+      setError(`Vous ne pouvez ajouter que ${availableSlots} document(s) supplémentaire(s)`);
+      return;
+    }
+
+    setError('');
+    setUploading(true);
+
+    try {
+      const newDocuments: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Vérifier le type de fichier (images et documents PDF)
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowedTypes.includes(file.type)) {
+          setError('Veuillez sélectionner uniquement des images (JPG, PNG, GIF, WebP) ou des documents (PDF, DOC, DOCX)');
+          return;
+        }
+
+        // Vérifier la taille (max 10MB pour les documents)
+        if (file.size > 10 * 1024 * 1024) {
+          setError('Chaque document ne doit pas dépasser 10MB');
+          return;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `doc-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `documents/${fileName}`;
+
+        // Upload vers Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('house-media')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Obtenir l'URL publique
+        const { data } = supabase.storage
+          .from('house-media')
+          .getPublicUrl(filePath);
+
+        newDocuments.push({
+          url: data.publicUrl,
+          name: file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'document'
+        });
+      }
+
+      // Mettre à jour le formulaire avec les nouveaux documents
+      const currentDocuments = (formData as any).description_documents || [];
+      setFormData({ 
+        ...formData, 
+        description_documents: [...currentDocuments, ...newDocuments] 
+      });
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de l\'upload des documents');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeDocument = (index: number) => {
+    const currentDocuments = (formData as any).description_documents || [];
+    const newDocuments = currentDocuments.filter((_: any, i: number) => i !== index);
+    setFormData({ ...formData, description_documents: newDocuments });
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -402,6 +480,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
         video_url: formData.video_url || null,
         virtual_tour_url: formData.virtual_tour_url || null,
         photos: formData.photos.length > 0 ? formData.photos : null,
+        description_documents: (formData as any).description_documents && (formData as any).description_documents.length > 0 ? (formData as any).description_documents : null,
 
         // Équipements généraux
         parking: formData.parking || false,
@@ -531,16 +610,107 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Description *
+                Description détaillée *
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
-                rows={4}
-                placeholder="Décrivez votre propriété..."
+                rows={6}
+                placeholder="Décrivez votre propriété en détail..."
                 required
               />
+              
+              {/* Section pour les documents et images de description */}
+              <div className="mt-4 border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-slate-700">
+                    Documents et images de description
+                  </label>
+                  <span className="text-xs text-slate-500">
+                    {(formData as any).description_documents?.length || 0}/5 fichiers
+                  </span>
+                </div>
+                
+                <div className="mb-3">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx"
+                    multiple
+                    onChange={handleDocumentUpload}
+                    className="hidden"
+                    id="description-documents-upload"
+                    disabled={uploading || ((formData as any).description_documents?.length || 0) >= 5}
+                  />
+                  <label
+                    htmlFor="description-documents-upload"
+                    className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${
+                      uploading || ((formData as any).description_documents?.length || 0) >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader className="w-5 h-5 mr-2 animate-spin" />
+                        Upload en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 mr-2" />
+                        Ajouter des documents
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                {/* Afficher les documents existants */}
+                {(formData as any).description_documents && (formData as any).description_documents.length > 0 && (
+                  <div className="space-y-2">
+                    {(formData as any).description_documents.map((doc: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
+                        <div className="flex items-center gap-3">
+                          {doc.type === 'image' ? (
+                            <img
+                              src={doc.url}
+                              alt={doc.name}
+                              className="w-12 h-12 object-cover rounded border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
+                              <FileText className="w-6 h-6 text-slate-500" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 truncate max-w-xs">{doc.name}</p>
+                            <p className="text-xs text-slate-500">{doc.type === 'image' ? 'Image' : 'Document'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => window.open(doc.url, '_blank')}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Voir"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(index)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Supprimer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-500 mt-3">
+                  Ajoutez des images et documents pour illustrer votre description (JPG, PNG, GIF, WebP, PDF, DOC, DOCX - max 10MB par fichier)
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

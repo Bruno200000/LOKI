@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { House, supabase } from '../../lib/supabase';
-import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Home as HomeIcon, Calendar, CheckCircle, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, Droplets, ChevronLeft, ChevronRight, Phone, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ContactModal } from './ContactModal';
 
@@ -316,7 +316,47 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
               <div className="lg:col-span-2 space-y-6">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-3">{house.title}</h3>
-                  <p className="text-slate-600 leading-relaxed">{house.description}</p>
+                  <p className="text-slate-600 leading-relaxed mb-4">{house.description}</p>
+
+                  {/* Afficher les documents de description */}
+                  {house.description_documents && house.description_documents.length > 0 && (
+                    <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                      <h4 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Documents et images de description
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {house.description_documents.map((doc: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3">
+                              {doc.type === 'image' ? (
+                                <img
+                                  src={doc.url}
+                                  alt={doc.name}
+                                  className="w-16 h-16 object-cover rounded border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
+                                  <FileText className="w-8 h-8 text-slate-500" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-slate-900 truncate max-w-xs">{doc.name}</p>
+                                <p className="text-xs text-slate-500">{doc.type === 'image' ? 'Image' : 'Document'}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => window.open(doc.url, '_blank')}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Voir le document"
+                            >
+                              <Eye className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Message des personnes regardant */}
                   <div className="mt-4 p-2">

@@ -45,6 +45,7 @@ export interface House {
   virtual_tour_url?: string | null;
   photos?: string[] | null;
   videos?: string[] | null;
+  description_documents?: Array<{url: string, name: string, type: 'image' | 'document'}> | null;
   image_data?: any | null; // bytea dans la BDD
   amenities?: string[] | null;
 
