@@ -233,7 +233,7 @@ export const TenantDashboard: React.FC = () => {
             </div>
 
             {/* Menu mobile */}
-            <div className={`md:hidden fixed inset-0 bg-white z-40 transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
+            <div className={`md:hidden fixed inset-0 bg-white z-40 transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
               <div className="px-4 pt-2 pb-3 space-y-1 sm:px-3">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
                   <div className="flex items-center">

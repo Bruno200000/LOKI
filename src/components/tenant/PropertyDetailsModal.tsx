@@ -97,26 +97,23 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
 
   const isResidence = house.type === 'residence';
 
-
-
-
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
-          <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-6 flex items-center justify-between">
-            <h2 className="text-lg sm:text-2xl font-bold text-slate-900">Détails de la propriété</h2>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-2 lg:mx-4 max-w-7xl">
+          <div className="sticky top-0 bg-white border-b border-slate-200 p-3 sm:p-4 lg:p-6 flex items-center justify-between">
+            <h2 className="text-base sm:text-lg lg:text-2xl font-bold text-slate-900">Détails de la propriété</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-slate-100 rounded-lg transition"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-slate-600" />
             </button>
           </div>
 
-          <div className="p-4 sm:p-6">
-            <div className="mb-6 sm:mb-8">
-              <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden mb-4">
+          <div className="p-3 sm:p-4 lg:p-6">
+            <div className="mb-4 sm:mb-6 lg:mb-8">
+              <div className="aspect-video bg-slate-200 rounded-lg overflow-hidden mb-3 sm:mb-4">
                 {/* Afficher la vidéo principale ou la première vidéo du tableau */}
                 {(() => {
                   // Priorité: video_url d'abord, puis videos[] si video_url n'existe pas
@@ -155,21 +152,27 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                         Votre navigateur ne supporte pas la lecture de vidéos.
                       </video>
                     );
-                  } else if (house.image_url) {
+                  }
+
+                  // Afficher l'image principale si pas de vidéo
+                  if (house.image_url) {
                     return (
                       <img
                         src={house.image_url}
                         alt={house.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Erreur de chargement image:', house.image_url, e);
+                        }}
                       />
                     );
-                  } else {
-                    return (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <HomeIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" />
-                      </div>
-                    );
                   }
+
+                  return (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                      <ImageIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" />
+                    </div>
+                  );
                 })()}
               </div>
 
@@ -312,45 +315,45 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-8">
+              <div className="xl:col-span-2 space-y-4 lg:space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">{house.title}</h3>
-                  <p className="text-slate-600 leading-relaxed mb-4">{house.description}</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 lg:mb-3">{house.title}</h3>
+                  <p className="text-slate-600 leading-relaxed mb-4 text-sm sm:text-base">{house.description}</p>
 
                   {/* Afficher les documents de description */}
                   {house.description_documents && house.description_documents.length > 0 && (
-                    <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                      <h4 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <FileText className="w-5 h-5" />
-                        Documents et images de description
+                    <div className="mb-4 lg:mb-6 p-3 lg:p-4 bg-slate-50 rounded-lg">
+                      <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-2 lg:mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <span className="text-sm lg:text-base">Documents et images</span>
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-3">
                         {house.description_documents.map((doc: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-3">
+                          <div key={index} className="flex items-center justify-between p-2 lg:p-3 bg-white rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-2 lg:gap-3">
                               {doc.type === 'image' ? (
                                 <img
                                   src={doc.url}
                                   alt={doc.name}
-                                  className="w-16 h-16 object-cover rounded border border-slate-200"
+                                  className="w-12 h-12 lg:w-16 lg:h-16 object-cover rounded border border-slate-200"
                                 />
                               ) : (
-                                <div className="w-16 h-16 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
-                                  <FileText className="w-8 h-8 text-slate-500" />
+                                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
+                                  <FileText className="w-6 h-6 lg:w-8 lg:h-8 text-slate-500" />
                                 </div>
                               )}
-                              <div>
-                                <p className="text-sm font-medium text-slate-900 truncate max-w-xs">{doc.name}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs lg:text-sm font-medium text-slate-900 truncate">{doc.name}</p>
                                 <p className="text-xs text-slate-500">{doc.type === 'image' ? 'Image' : 'Document'}</p>
                               </div>
                             </div>
                             <button
                               onClick={() => window.open(doc.url, '_blank')}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              className="p-1 lg:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                               title="Voir le document"
                             >
-                              <Eye className="w-5 h-5" />
+                              <Eye className="w-4 h-4 lg:w-5 lg:h-5" />
                             </button>
                           </div>
                         ))}
@@ -359,26 +362,26 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                   )}
 
                   {/* Message des personnes regardant */}
-                  <div className="mt-4 p-2">
-                    <p className="text-red-500 font-medium text-sm flex items-center gap-2 animate-pulse">
-                      <Eye className="w-4 h-4" />
+                  <div className="mt-3 lg:mt-4 p-2 lg:p-3">
+                    <p className="text-red-500 font-medium text-xs sm:text-sm flex items-center gap-2 animate-pulse">
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="text-red-600 font-bold">{viewersCount}</span>
-                      personne{viewersCount > 1 ? 's' : ''} regarde{viewersCount > 1 ? 'nt' : ''} cette propriété en ce moment
+                      <span className="text-xs sm:text-sm">personne{viewersCount > 1 ? 's' : ''} regarde{viewersCount > 1 ? 'nt' : ''} cette propriété en ce moment</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-lg text-center">
-                    <Bed className="w-8 h-8 text-ci-orange-600 mx-auto mb-2" />
-                    <div className="font-semibold text-slate-900">{house.bedrooms || 1}</div>
-                    <div className="text-sm text-slate-600">Chambre{(house.bedrooms || 1) > 1 ? 's' : ''}</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
+                  <div className="bg-slate-50 p-3 lg:p-4 rounded-lg text-center">
+                    <Bed className="w-6 h-6 lg:w-8 lg:h-8 text-ci-orange-600 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-900 text-sm lg:text-base">{house.bedrooms || 1}</div>
+                    <div className="text-xs lg:text-sm text-slate-600">Chambre{(house.bedrooms || 1) > 1 ? 's' : ''}</div>
                   </div>
 
-                  <div className="bg-slate-50 p-4 rounded-lg text-center">
-                    <Bath className="w-8 h-8 text-ci-orange-600 mx-auto mb-2" />
-                    <div className="font-semibold text-slate-900">{house.bathrooms || 1}</div>
-                    <div className="text-sm text-slate-600">Salle{(house.bathrooms || 1) > 1 ? 's' : ''} de bain</div>
+                  <div className="bg-slate-50 p-3 lg:p-4 rounded-lg text-center">
+                    <Bath className="w-6 h-6 lg:w-8 lg:h-8 text-ci-orange-600 mx-auto mb-2" />
+                    <div className="font-semibold text-slate-900 text-sm lg:text-base">{house.bathrooms || 1}</div>
+                    <div className="text-xs lg:text-sm text-slate-600">Salle{(house.bathrooms || 1) > 1 ? 's' : ''} de bain</div>
                   </div>
 
                   {house.area_sqm && (
@@ -396,93 +399,93 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-lg">
-                  <h4 className="text-lg font-semibold text-slate-900 mb-4">Informations sur la propriété</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 lg:p-6 rounded-lg">
+                  <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-3 lg:mb-4">Informations sur la propriété</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                     {house.neighborhood && (
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-slate-600" />
+                        <MapPin className="w-4 h-4 lg:w-5 lg:h-5 text-slate-600" />
                         <div>
-                          <div className="font-medium text-slate-900">Quartier</div>
-                          <div className="text-sm text-slate-600">{house.neighborhood}</div>
+                          <div className="font-medium text-slate-900 text-sm lg:text-base">Quartier</div>
+                          <div className="text-xs lg:text-sm text-slate-600">{house.neighborhood}</div>
                         </div>
                       </div>
                     )}
 
                     {house.type && (
                       <div className="flex items-center gap-2">
-                        <HomeIcon className="w-5 h-5 text-slate-600" />
+                        <HomeIcon className="w-4 h-4 lg:w-5 lg:h-5 text-slate-600" />
                         <div>
-                          <div className="font-medium text-slate-900">Type de propriété</div>
-                          <div className="text-sm text-slate-600">{house.type}</div>
+                          <div className="font-medium text-slate-900 text-sm lg:text-base">Type</div>
+                          <div className="text-xs lg:text-sm text-slate-600">{house.type}</div>
                         </div>
                       </div>
                     )}
 
                     {house.floor && (
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-600">Étage:</span>
-                        <span className="font-medium text-slate-900">{house.floor}ème</span>
+                        <span className="text-slate-600 text-sm lg:text-base">Étage:</span>
+                        <span className="font-medium text-slate-900 text-sm lg:text-base">{house.floor}ème</span>
                       </div>
                     )}
 
                     {house.furnished && (
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-600">Meublé:</span>
-                        <span className="font-medium text-green-600">Oui</span>
+                        <span className="text-slate-600 text-sm lg:text-base">Meublé:</span>
+                        <span className="font-medium text-green-600 text-sm lg:text-base">Oui</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   <div>
-                    <h4 className="text-lg font-semibold text-slate-900 mb-3">Confort et équipements</h4>
-                    <div className="space-y-2">
+                    <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-2 lg:mb-3">Confort et équipements</h4>
+                    <div className="space-y-1 lg:space-y-2">
                       {house.air_conditioning && (
                         <div className="flex items-center gap-2">
                           <Thermometer className="w-4 h-4 text-blue-600" />
-                          <span className="text-slate-700">Climatisation</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Climatisation</span>
                         </div>
                       )}
                       {house.heating && (
                         <div className="flex items-center gap-2">
                           <Thermometer className="w-4 h-4 text-orange-600" />
-                          <span className="text-slate-700">Chauffage</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Chauffage</span>
                         </div>
                       )}
                       {house.hot_water && (
                         <div className="flex items-center gap-2">
                           <Droplets className="w-4 h-4 text-blue-600" />
-                          <span className="text-slate-700">Eau chaude</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Eau chaude</span>
                         </div>
                       )}
                       {house.internet && (
                         <div className="flex items-center gap-2">
                           <Wifi className="w-4 h-4 text-green-600" />
-                          <span className="text-slate-700">Internet</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Internet</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-lg font-semibold text-slate-900 mb-3">Sécurité et services</h4>
-                    <div className="space-y-2">
+                    <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-2 lg:mb-3">Sécurité et services</h4>
+                    <div className="space-y-1 lg:space-y-2">
                       {house.parking && (
                         <div className="flex items-center gap-2">
                           <Car className="w-4 h-4 text-slate-600" />
-                          <span className="text-slate-700">Parking</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Parking</span>
                         </div>
                       )}
                       {house.elevator && (
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-700">Ascenseur</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Ascenseur</span>
                         </div>
                       )}
                       {house.balcony && (
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-700">Balcon/Terrasse</span>
+                          <span className="text-slate-700 text-sm lg:text-base">Balcon/Terrasse</span>
                         </div>
                       )}
                       {house.garden && (
@@ -611,22 +614,22 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
               </div>
 
               <div className="lg:col-span-1">
-                <div className="bg-slate-50 rounded-lg p-4 sm:p-6 sticky top-6">
-                  <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-4">
+                <div className="bg-slate-50 rounded-lg p-3 sm:p-4 lg:p-6 sticky top-6">
+                  <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">
                     {isResidence ? 'Réserver cette résidence' : 'Contacter le propriétaire'}
                   </h4>
 
-                  <div className="space-y-3 sm:space-y-4 mb-6">
+                  <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600 text-sm sm:text-base">
                         {house.type === 'land' ? 'Prix de vente' : 'Loyer mensuel'}
                       </span>
-                      <span className="font-semibold text-base sm:text-lg">{house.price.toLocaleString()} FCFA</span>
+                      <span className="font-semibold text-base sm:text-lg lg:text-xl">{house.price.toLocaleString()} FCFA</span>
                     </div>
 
                     {isResidence && (
-                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <p className="text-sm text-blue-800">
+                      <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-100">
+                        <p className="text-xs sm:text-sm text-blue-800">
                           Réservation gratuite. Payez directement le propriétaire.
                         </p>
                       </div>
@@ -636,16 +639,17 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                   {isResidence ? (
                     <button
                       onClick={handleBookingClick}
-                      className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white text-sm sm:text-base"
+                      className="w-full font-semibold py-2.5 sm:py-3 lg:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-orange-600 hover:bg-ci-orange-700 text-white text-sm sm:text-base"
                     >
                       {user ? (
                         <>
-                          <Calendar className="w-5 h-5" />
-                          Réserver maintenant
+                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span>Réserver maintenant</span>
                         </>
                       ) : (
                         <>
-                          Se connecter pour réserver
+                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span>Se connecter pour réserver</span>
                         </>
                       )}
                     </button>
@@ -653,10 +657,10 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                     <div className="space-y-3">
                       <button
                         onClick={handleContactClick}
-                        className="w-full font-semibold py-3 sm:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
+                        className="w-full font-semibold py-2.5 sm:py-3 lg:py-4 rounded-lg transition flex items-center justify-center gap-2 bg-ci-green-600 hover:bg-ci-green-700 text-white text-sm sm:text-base"
                       >
-                        <Phone className="w-5 h-5" />
-                        {user ? 'Contacter le propriétaire' : 'Se connecter pour contacter'}
+                        <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>{user ? 'Contacter le propriétaire' : 'Se connecter pour contacter'}</span>
                       </button>
 
                       {!user && (
