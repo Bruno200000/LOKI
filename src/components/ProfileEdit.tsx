@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, IVORIAN_CITIES } from '../lib/supabase';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, Mail } from 'lucide-react';
 
 export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { profile, setProfile } = useAuth();
@@ -33,6 +33,20 @@ export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setError('');
 
     try {
+      // Mettre à jour les métadonnées de l'utilisateur pour le téléphone
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          phone: formData.phone || null,
+          city: formData.city || null,
+        }
+      });
+
+      if (authError) {
+        console.error('Erreur mise à jour auth:', authError);
+        // Continuer même si l'auth update échoue
+      }
+
+      // Mettre à jour le profil dans la table profiles
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -56,6 +70,7 @@ export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       onBack(); // Retourner à la page précédente
     } catch (err: any) {
+      console.error('Erreur complète:', err);
       setError(err.message || 'Erreur lors de la mise à jour');
     } finally {
       setLoading(false);
@@ -87,6 +102,17 @@ export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {error}
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Email
+              </label>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <Mail className="w-5 h-5 text-slate-400" />
+                <span className="text-slate-900 font-medium">{profile?.email || 'Non disponible'}</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">L'email ne peut pas être modifié</p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">

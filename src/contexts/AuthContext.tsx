@@ -202,6 +202,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: role,
           phone: sanitizedPhone,
           city: sanitizedCity,
+          owner_type: role === 'owner' ? ownerType : null,
+          main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
         },
       },
     });
