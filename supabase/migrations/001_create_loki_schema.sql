@@ -1,11 +1,5 @@
 /*
   # LOKI House Colocation Platform - Database Schema (Supabase / PostgreSQL)
-```sql
-/*
-  # LOKI House Colocation Platform - Database Schema (Supabase / PostgreSQL)
-
-  ## Nouvelle section ajoutée :
-  - Table `reviews` : pour les avis et évaluations des maisons par les locataires.
 */
 
 -- =============================================================================
@@ -27,6 +21,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   first_name text,
   last_name text,
   phone text,
+  city text,
+  address text,
+  owner_type character varying(20),
+  main_activity_neighborhood character varying(255),
   role user_role DEFAULT 'tenant' NOT NULL,
   avatar_url text,
   created_at timestamptz DEFAULT now(),
@@ -61,8 +59,25 @@ CREATE TRIGGER trg_profiles_updated_at
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
+  INSERT INTO public.profiles (
+    id,
+    email,
+    full_name,
+    phone,
+    city,
+    role
+  )
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NULLIF(NEW.raw_user_meta_data->>'full_name',''), NEW.email::text),
+    NULLIF(NEW.raw_user_meta_data->>'phone',''),
+    NULLIF(NEW.raw_user_meta_data->>'city',''),
+    CASE
+      WHEN NEW.raw_user_meta_data->>'role' IN ('owner','tenant','admin') THEN (NEW.raw_user_meta_data->>'role')::user_role
+      ELSE 'tenant'::user_role
+    END
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -181,7 +196,7 @@ CREATE TRIGGER trg_payments_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================================================
--- REVIEWS TABLE (NEW)
+-- REVIEWS TABLE
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.reviews (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -191,7 +206,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   comment text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
-  UNIQUE (house_id, tenant_id) -- un seul avis par locataire pour une maison
+  UNIQUE (house_id, tenant_id)
 );
 
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
@@ -208,7 +223,7 @@ CREATE POLICY "Tenants can create reviews for their bookings"
       SELECT 1 FROM bookings
       WHERE bookings.tenant_id = auth.uid()
       AND bookings.house_id = reviews.house_id
-      AND bookings.status IN ('completed')
+      AND bookings.status = 'completed'
     )
   );
 
