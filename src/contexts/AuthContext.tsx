@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+
         return null;
       }
       return data;
@@ -294,7 +294,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(defaultProfile);
         }
       } catch (profileErr) {
-        console.warn('Erreur lors de la récupération du profil:', profileErr);
+        console.error('Erreur lors de la récupération du profil:', profileErr);
         // Créer un profil par défaut en cas d'erreur
         const defaultProfile = {
           id: data.user.id,
