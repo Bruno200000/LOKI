@@ -111,7 +111,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     if (user) {
       const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
+      if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+        setProfile(profileData as Profile);
+      } else {
+        setProfile(null);
+      }
     }
   };
 
@@ -162,7 +166,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          if (profileData) setProfile(profileData);
+          if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+            setProfile(profileData as Profile);
+          } else {
+            console.warn('Profile data is invalid:', profileData);
+            setProfile(null);
+          }
         })();
       }
 
@@ -208,7 +217,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          setProfile(profileData);
+          if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+            setProfile(profileData as Profile);
+          } else {
+            console.warn('Profile data is invalid after auth state change:', profileData);
+            setProfile(null);
+          }
         } else {
           setProfile(null);
         }
@@ -230,20 +244,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ownerType?: 'particulier' | 'agent',
     mainActivityNeighborhood?: string
   ) => {
-    // Validation des entrées
+    console.log('Début de l\'inscription pour:', email);
+
+    // Validation des entrées plus permissive
     const emailValidation = SecurityUtils.validateEmail(email);
     const passwordValidation = SecurityUtils.validatePassword(password);
     const nameValidation = SecurityUtils.validateFullName(fullName);
-    const phoneValidation = SecurityUtils.validatePhone(phone);
 
-    if (!emailValidation.isValid || !passwordValidation.isValid || !nameValidation.isValid || !phoneValidation.isValid) {
-      const allErrors = [
-        ...emailValidation.errors,
-        ...passwordValidation.errors,
-        ...nameValidation.errors,
-        ...phoneValidation.errors,
-      ];
-      throw new Error(`Erreurs de validation: ${allErrors.join(', ')}`);
+    if (!emailValidation.isValid) {
+      throw new Error(`Email invalide: ${emailValidation.errors.join(', ')}`);
+    }
+
+    if (!passwordValidation.isValid) {
+      throw new Error(`Mot de passe invalide: ${passwordValidation.errors.join(', ')}`);
+    }
+
+    if (!nameValidation.isValid) {
+      throw new Error(`Nom invalide: ${nameValidation.errors.join(', ')}`);
     }
 
     // Rate limiting
@@ -258,6 +275,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sanitizedPhone = SecurityUtils.sanitizeInput(phone);
     const sanitizedCity = SecurityUtils.sanitizeInput(city);
 
+    console.log('Appel à Supabase signUp avec:', { sanitizedEmail, sanitizedName, role });
+
     const { data, error } = await supabase.auth.signUp({
       email: sanitizedEmail,
       password,
@@ -265,7 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           full_name: sanitizedName,
           role: role,
-          phone: sanitizedPhone,
+          phone: sanitizedPhone || null,
           city: sanitizedCity,
           owner_type: role === 'owner' ? ownerType : null,
           main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
@@ -274,9 +293,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
+      console.error('Erreur Supabase signUp:', error);
       SecurityMiddleware.logSecurityEvent('SIGNUP_FAILED', { email: sanitizedEmail, error: error.message });
       throw error;
     }
+
+    console.log('Réponse Supabase signUp:', data);
 
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
@@ -288,7 +310,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: sanitizedName,
             role,
-            phone: sanitizedPhone,
+            phone: sanitizedPhone || null,
             city: sanitizedCity,
             owner_type: role === 'owner' ? ownerType : null,
             main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
@@ -335,7 +357,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNIN_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
       const profileData = await fetchProfile(data.user.id);
-      setProfile(profileData);
+      if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+        setProfile(profileData as Profile);
+      } else {
+        setProfile(null);
+      }
     }
   };
 

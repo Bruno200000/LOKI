@@ -28,24 +28,42 @@ export const Register: React.FC<RegisterProps> = ({ onToggleMode }) => {
     setSuccess('');
     setLoading(true);
 
+    // Validation plus permissive
+    if (!email || !password || !fullName) {
+      setError('Veuillez remplir les champs obligatoires: email, mot de passe et nom complet');
+      setLoading(false);
+      return;
+    }
+
     if (password.length < 6) {
       setError('Le mot de passe doit contenir au moins 6 caractères');
       setLoading(false);
       return;
     }
 
+    if (!city) {
+      setError('Veuillez sélectionner une ville');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Tentative d\'inscription avec:', { email, fullName, phone, city, role });
       await signUp(email, password, fullName, role, phone, city, ownerType, mainActivityNeighborhood);
       setSuccess('Compte créé avec succès ! Vérifiez votre email et cliquez sur le lien de confirmation. Vous serez ensuite redirigé vers votre tableau de bord.');
       setLoading(false);
-      // Ne pas vider les champs pour permettre à l'utilisateur de voir le message de succès
     } catch (err: any) {
+      console.error('Erreur d\'inscription:', err);
       if (err.message?.includes('over_email_send_rate_limit')) {
         setError('Trop de tentatives. Veuillez attendre quelques instants avant de réessayer.');
       } else if (err.message?.includes('User already registered')) {
         setError('Cet email est déjà utilisé. Essayez de vous connecter.');
+      } else if (err.message?.includes('Invalid email')) {
+        setError('L\'adresse email semble invalide. Veuillez vérifier.');
+      } else if (err.message?.includes('weak_password')) {
+        setError('Le mot de passe est trop faible. Choisissez un mot de passe plus robuste.');
       } else {
-        setError(err.message || 'Erreur lors de la création du compte');
+        setError(err.message || 'Erreur lors de la création du compte. Veuillez réessayer.');
       }
       setLoading(false);
     }
