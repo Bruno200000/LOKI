@@ -78,7 +78,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
       virtual_tour_url: '',
       photos: [] as string[],
       videos: [] as string[],
-      description_documents: [] as Array<{url: string, name: string, type: 'image' | 'document'}>,
+      description_documents: [] as Array<{ url: string, name: string, type: 'image' | 'document' }>,
 
       // Caractéristiques générales
       area_sqm: '',
@@ -360,7 +360,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
     setUploading(true);
 
     try {
-      const newDocuments: string[] = [];
+      const newDocuments: Array<{ url: string, name: string, type: 'image' | 'document' }> = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -403,9 +403,9 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
 
       // Mettre à jour le formulaire avec les nouveaux documents
       const currentDocuments = (formData as any).description_documents || [];
-      setFormData({ 
-        ...formData, 
-        description_documents: [...currentDocuments, ...newDocuments] 
+      setFormData({
+        ...formData,
+        description_documents: [...currentDocuments, ...newDocuments]
       });
     } catch (err: any) {
       setError(err.message || 'Erreur lors de l\'upload des documents');
@@ -620,7 +620,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                 placeholder="Décrivez votre propriété en détail..."
                 required
               />
-              
+
               {/* Section pour les documents et images de description */}
               <div className="mt-4 border border-slate-200 rounded-lg p-4 bg-slate-50">
                 <div className="flex items-center justify-between mb-3">
@@ -631,7 +631,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                     {(formData as any).description_documents?.length || 0}/5 fichiers
                   </span>
                 </div>
-                
+
                 <div className="mb-3">
                   <input
                     type="file"
@@ -644,9 +644,8 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                   />
                   <label
                     htmlFor="description-documents-upload"
-                    className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${
-                      uploading || ((formData as any).description_documents?.length || 0) >= 5 ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`inline-flex items-center px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ci-orange-500 hover:bg-orange-50 transition ${uploading || ((formData as any).description_documents?.length || 0) >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                   >
                     {uploading ? (
                       <>

@@ -4,7 +4,7 @@ import { supabase, IVORIAN_CITIES } from '../lib/supabase';
 import { ArrowLeft, Save, User, Mail, CheckCircle } from 'lucide-react';
 
 export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const { profile, setProfile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -44,6 +44,22 @@ export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       console.log('Tentative de mise à jour avec:', updateData, 'pour id:', profile.id);
 
+      // 1. Update Auth Metadata (to keep fallback in sync)
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: {
+          full_name: formData.full_name,
+          phone: formData.phone,
+          city: formData.city,
+          address: formData.address // custom field
+        }
+      });
+
+      if (metadataError) {
+        console.warn('Erreur lors de la mise à jour des métadonnées:', metadataError);
+        // We continue, as this is secondary to the main profile table
+      }
+
+      // 2. Update Profiles Table
       const { data, error } = await supabase
         .from('profiles')
         .update(updateData)
@@ -62,13 +78,11 @@ export const ProfileEdit: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
       console.log('Mise à jour réussie:', data);
 
-      setProfile({
-        ...profile,
-        ...data
-      });
+      // 3. Refresh global profile state
+      await refreshProfile();
 
       setSuccess(true);
-      
+
       setTimeout(() => {
         setSuccess(false);
         onBack();

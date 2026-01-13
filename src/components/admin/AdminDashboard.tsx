@@ -121,15 +121,10 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchHouses = async () => {
     try {
-      console.log('🔍 Récupération des maisons...');
-      console.log('👤 User profile:', profile);
-      console.log('👤 User role:', profile?.role);
-      
       // Check if user is admin
       if (!profile || profile.role !== 'admin') {
-        console.log('⚠️ User is not admin, using regular query');
         // Use regular query for non-admin users
-        const { data, error } = await supabase
+        let query = supabase
           .from('houses')
           .select(`
             *,
@@ -142,24 +137,45 @@ export const AdminDashboard: React.FC = () => {
           `)
           .order('created_at', { ascending: false });
 
+        let { data, error } = await query;
+
+        // Fallback: if fetching with email fails, try without it
+        if (error) {
+          console.warn('⚠️ Fetch with email failed, retrying without email...', error.message);
+          const fallbackQuery = supabase
+            .from('houses')
+            .select(`
+              *,
+              owner:profiles (
+                id,
+                full_name,
+                phone
+              )
+            `)
+            .order('created_at', { ascending: false });
+
+          const result = await fallbackQuery;
+          data = result.data;
+          error = result.error;
+        }
+
         if (error) {
           console.error('❌ Erreur houses (regular):', error);
         } else {
-          console.log('✅ Maisons récupérées (regular):', data?.length);
           setHouses(data || []);
         }
         return;
       }
-      
+
       // Try RPC function first (bypasses RLS) - only for admins
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_houses_for_admin');
-      
+
       console.log('🔧 RPC Response:', { data: rpcData, error: rpcError });
-      
+
       if (!rpcError && rpcData && rpcData.length > 0) {
         console.log('✅ Maisons récupérées via RPC:', rpcData.length);
         console.log('🏠 RPC Data sample:', rpcData[0]);
-        
+
         // Map RPC data to match House interface
         const mappedHouses = rpcData.map((house: any) => ({
           ...house,
@@ -170,20 +186,20 @@ export const AdminDashboard: React.FC = () => {
             phone: house.owner_phone
           } : null
         }));
-        
+
         console.log('🏠 Mapped houses:', mappedHouses[0]);
         setHouses(mappedHouses);
         return;
       }
-      
+
       if (rpcError) {
         console.error('❌ RPC Error details:', rpcError);
       } else if (!rpcData || rpcData.length === 0) {
         console.log('ℹ️ RPC returned empty data');
       }
-      
+
       console.log('⚠️ RPC failed, falling back to direct query');
-      
+
       // First try without the join to see if houses exist
       const { data: housesOnly, error: housesError } = await supabase
         .from('houses')
@@ -192,13 +208,14 @@ export const AdminDashboard: React.FC = () => {
 
       console.log('🏠 Houses without join:', housesOnly?.length, housesError);
       console.log('🏠 Houses data:', housesOnly);
-      
+
       if (housesError) {
         console.error('❌ Erreur houses (simple):', housesError);
       }
 
       // Then try with the join
-      const { data, error } = await supabase
+      // Then try with the join (Full attempt)
+      let { data, error } = await supabase
         .from('houses')
         .select(`
           *,
@@ -211,18 +228,34 @@ export const AdminDashboard: React.FC = () => {
         `)
         .order('created_at', { ascending: false });
 
+      // Fallback: If full attempt fails, try without email
+      if (error) {
+        console.warn('⚠️ Admin fetch with email failed, retrying without email...', error.message);
+        const retryResult = await supabase
+          .from('houses')
+          .select(`
+            *,
+            owner:profiles (
+              id,
+              full_name,
+              phone
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        data = retryResult.data;
+        error = retryResult.error;
+      }
+
       if (error) {
         console.error('❌ Erreur houses (with join):', error);
-        // If join fails, use houses without owner info
+        // If join still fails, use houses without owner info (from previous generic fetch)
         if (housesOnly) {
-          console.log('✅ Using houses without owner info:', housesOnly.length);
           setHouses(housesOnly);
         }
         return;
       }
 
-      console.log('✅ Maisons récupérées avec jointure:', data?.length);
-      console.log('🏠 Houses with owners:', data);
       setHouses(data || []);
     } catch (error) {
       console.error('❌ Erreur fetchHouses:', error);
@@ -1062,8 +1095,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-sm text-slate-600">
-                        Total: <span className="font-semibold text-slate-900">{houses.length}</span> | 
-                        Disponibles: <span className="font-semibold text-green-600">{houses.filter(h => h.status === 'available').length}</span> | 
+                        Total: <span className="font-semibold text-slate-900">{houses.length}</span> |
+                        Disponibles: <span className="font-semibold text-green-600">{houses.filter(h => h.status === 'available').length}</span> |
                         Prises: <span className="font-semibold text-red-600">{houses.filter(h => h.status === 'taken').length}</span>
                       </div>
                       <button
@@ -1093,8 +1126,8 @@ export const AdminDashboard: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-3">
                                 {house.photos && house.photos.length > 0 ? (
-                                  <img 
-                                    src={house.photos[0]} 
+                                  <img
+                                    src={house.photos[0]}
                                     alt={house.title}
                                     className="w-12 h-12 rounded-lg object-cover border border-slate-200"
                                   />
@@ -1123,15 +1156,14 @@ export const AdminDashboard: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                house.type === 'residence' ? 'bg-purple-100 text-purple-800' :
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${house.type === 'residence' ? 'bg-purple-100 text-purple-800' :
                                 house.type === 'house' ? 'bg-blue-100 text-blue-800' :
-                                house.type === 'land' ? 'bg-green-100 text-green-800' :
-                                'bg-orange-100 text-orange-800'
-                              }`}>
+                                  house.type === 'land' ? 'bg-green-100 text-green-800' :
+                                    'bg-orange-100 text-orange-800'
+                                }`}>
                                 {house.type === 'residence' ? 'Résidence' :
-                                 house.type === 'house' ? 'Maison' :
-                                 house.type === 'land' ? 'Terrain' : 'Magasin'}
+                                  house.type === 'house' ? 'Maison' :
+                                    house.type === 'land' ? 'Terrain' : 'Magasin'}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
@@ -1149,11 +1181,10 @@ export const AdminDashboard: React.FC = () => {
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                house.status === 'available' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${house.status === 'available'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                                }`}>
                                 {house.status === 'available' ? 'Disponible' : 'Pris'}
                               </span>
                             </td>
@@ -1161,11 +1192,10 @@ export const AdminDashboard: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => toggleFeatured(house.id, house.featured || false)}
-                                  className={`p-1.5 rounded-lg transition-colors ${
-                                    house.featured 
-                                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                  }`}
+                                  className={`p-1.5 rounded-lg transition-colors ${house.featured
+                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
                                   title={house.featured ? "Retirer de la vedette" : "Mettre en vedette"}
                                 >
                                   <Star className={`w-4 h-4 ${house.featured ? 'fill-current' : ''}`} />

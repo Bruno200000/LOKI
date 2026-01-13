@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
-import { DemoPage } from './components/DemoPage';
+
 import { PropertyDetailsModal } from './components/tenant/PropertyDetailsModal';
 import { BookingForm } from './components/tenant/BookingForm';
 import { Login } from './components/auth/Login';
@@ -132,7 +132,7 @@ function AppContent() {
 
   const isAbout = currentPath === '/about';
   const isContact = currentPath === '/contact';
-  const isDemo = currentPath === '/demo';
+
 
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
@@ -183,11 +183,6 @@ function AppContent() {
   // Handle Password Reset
   if (resetParam === 'true') {
     return <ResetPassword />;
-  }
-
-  // Handle URL-based routing FIRST - this should take priority over authentication logic
-  if (isDemo) {
-    return <DemoPage />;
   }
 
   // Handle About and Contact pages - show for all users unless they specifically want to go to dashboard

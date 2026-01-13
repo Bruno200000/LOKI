@@ -32,64 +32,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    console.log('Récupération du profil pour userId:', userId);
 
-    const preferredCols = [
-      'id',
-      'full_name',
-      'role',
-      'email',
-      'phone',
-      'city',
-      'address',
-      'owner_type',
-      'main_activity_neighborhood',
-      'created_at',
-      'updated_at'
-    ];
 
-    const selectCols = (cols: string[]) => cols.join(',');
+
 
     try {
-      // Try with preferred columns first
+      // Use wildcard to avoid errors when specific columns (like email) are missing in DB
       let { data, error } = await supabase
         .from('profiles')
-        .select(selectCols(preferredCols))
+        .select('*')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) {
-        // If column does not exist (e.g., profiles table missing `email` or `updated_at`), try a fallback
-        if (error.code === '42703' || /does not exist/i.test(error.message || '')) {
-          console.warn('Column missing in profiles table, retrying without optional cols:', error.message);
-          const fallbackCols = preferredCols.filter(c => c !== 'email' && c !== 'updated_at');
-          const result = await supabase
-            .from('profiles')
-            .select(selectCols(fallbackCols))
-            .eq('id', userId)
-            .maybeSingle();
-
-          if (result.error) {
-            console.error('Error fetching profile after fallback:', result.error);
-            return null;
-          }
-
-          console.log('Profil récupéré (fallback):', result.data);
-          return result.data;
-        }
-
         console.error('Error fetching profile:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-
         return null;
       }
-
-      console.log('Profil récupéré:', data);
       return data;
     } catch (err: any) {
       console.error('Unexpected error fetching profile:', err);
@@ -106,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise((res) => setTimeout(res, delayMs));
     }
     return null;
-  }; 
+  };
 
   const refreshProfile = async () => {
     if (user) {
@@ -120,61 +78,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Fallback profile creator
+    const getFallbackProfile = (user: User): Profile => ({
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Utilisateur',
+      role: (user.user_metadata?.role as any) || 'tenant',
+      phone: user.user_metadata?.phone || null,
+      city: user.user_metadata?.city || null,
+      created_at: new Date().toISOString()
+    });
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        // Try to fetch existing profile; retry a few times to handle trigger timing
         (async () => {
           let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
 
           if (!profileData) {
-            // If still missing, try to ensure auth metadata is set so the trigger can populate profile
+            // Try to force metadata update if profile is missing
             const fullName = session.user.user_metadata?.full_name ||
               session.user.user_metadata?.name ||
               session.user.email?.split('@')[0] || 'User';
 
-            const nameValidation = SecurityUtils.validateFullName(fullName);
-            if (!nameValidation.isValid) {
-              console.error('Invalid name provided:', nameValidation.errors);
-            }
-
             const sanitizedName = SecurityUtils.sanitizeInput(fullName);
-            const phone = session.user.user_metadata?.phone || null;
-            const city = session.user.user_metadata?.city || null;
             const role = session.user.user_metadata?.role || 'tenant';
 
             try {
-              const { error: metaError } = await supabase.auth.updateUser({
+              await supabase.auth.updateUser({
                 data: {
                   full_name: sanitizedName,
                   role,
-                  phone: phone,
-                  city: city,
                 },
               });
-
-              if (metaError) {
-                console.warn('Unable to update auth metadata during session init:', metaError);
-              } else {
-                // Try to fetch once more
-                profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
-              }
+              // Retry fetch one last time
+              profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
             } catch (err) {
-              console.warn('Error updating auth metadata during session init:', err);
+              // Ignore error
             }
           }
 
           if (profileData && typeof profileData === 'object' && 'id' in profileData) {
             setProfile(profileData as Profile);
           } else {
-            console.warn('Profile data is invalid:', profileData);
-            setProfile(null);
+            // CRITICAL FIX: Do not log out if profile fetch fails. Use fallback.
+            setProfile(getFallbackProfile(session.user));
           }
         })();
       }
-
       setLoading(false);
     });
 
@@ -184,7 +137,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Try to fetch profile with retries
           let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
 
           if (!profileData) {
@@ -192,36 +144,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               session.user.user_metadata?.name ||
               session.user.email?.split('@')[0] || 'User';
 
-            const sanitizedName = SecurityUtils.sanitizeInput(fullName);
-            const phone = session.user.user_metadata?.phone || null;
-            const city = session.user.user_metadata?.city || null;
-            const role = session.user.user_metadata?.role || 'tenant';
-
             try {
-              const { error: metaError } = await supabase.auth.updateUser({
-                data: {
-                  full_name: sanitizedName,
-                  role,
-                  phone: phone,
-                  city: city,
-                },
+              // Ensure metadata is set
+              await supabase.auth.updateUser({
+                data: { full_name: fullName }
               });
-
-              if (metaError) {
-                console.warn('Unable to update auth metadata after auth state change:', metaError);
-              } else {
-                profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
-              }
-            } catch (err) {
-              console.warn('Error updating auth metadata after auth state change:', err);
-            }
+              profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
+            } catch (e) { /* ignore */ }
           }
 
           if (profileData && typeof profileData === 'object' && 'id' in profileData) {
             setProfile(profileData as Profile);
           } else {
-            console.warn('Profile data is invalid after auth state change:', profileData);
-            setProfile(null);
+            // CRITICAL FIX: Use fallback profile instead of null to prevent disconnect
+            setProfile(getFallbackProfile(session.user));
           }
         } else {
           setProfile(null);
@@ -244,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ownerType?: 'particulier' | 'agent',
     mainActivityNeighborhood?: string
   ) => {
-    console.log('Début de l\'inscription pour:', email);
+
 
     // Validation des entrées plus permissive
     const emailValidation = SecurityUtils.validateEmail(email);
@@ -275,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sanitizedPhone = SecurityUtils.sanitizeInput(phone);
     const sanitizedCity = SecurityUtils.sanitizeInput(city);
 
-    console.log('Appel à Supabase signUp avec:', { sanitizedEmail, sanitizedName, role });
+
 
     const { data, error } = await supabase.auth.signUp({
       email: sanitizedEmail,
@@ -283,11 +219,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         data: {
           full_name: sanitizedName,
-          role: role,
-          phone: sanitizedPhone || null,
+          role,
+          phone: sanitizedPhone,
           city: sanitizedCity,
-          owner_type: role === 'owner' ? ownerType : null,
-          main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
+          owner_type: ownerType,
+          main_activity_neighborhood: mainActivityNeighborhood,
         },
       },
     });
@@ -298,33 +234,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
 
-    console.log('Réponse Supabase signUp:', data);
+
 
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
 
-      // Ne pas upserter le profil côté client (RLS peut bloquer si l'utilisateur n'est pas encore authentifié).
-      // Essayer de sauvegarder les métadonnées utilisateur pour que le trigger côté serveur puisse les copier dans profiles.
-      try {
-        const { error: metaError } = await supabase.auth.updateUser({
-          data: {
-            full_name: sanitizedName,
-            role,
-            phone: sanitizedPhone || null,
-            city: sanitizedCity,
-            owner_type: role === 'owner' ? ownerType : null,
-            main_activity_neighborhood: role === 'owner' ? mainActivityNeighborhood : null,
-          },
-        });
-
-        if (metaError) {
-          console.warn('Impossible de mettre à jour les métadonnées utilisateur immédiatement:', metaError);
-        } else {
-          console.log('Métadonnées utilisateur sauvegardées dans auth (le trigger va créer / mettre à jour le profil).');
-        }
-      } catch (err) {
-        console.warn('Erreur lors de la mise à jour des métadonnées utilisateur:', err);
-      }
+      // Ne pas créer le profil immédiatement à cause des RLS
+      // Le profil sera créé lors de la première connexion via le trigger
+      console.log('Inscription réussie. Le profil sera créé lors de la confirmation email et première connexion.');
     }
   };
 
@@ -356,11 +273,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNIN_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
-      const profileData = await fetchProfile(data.user.id);
-      if (profileData && typeof profileData === 'object' && 'id' in profileData) {
-        setProfile(profileData as Profile);
-      } else {
-        setProfile(null);
+
+      // Essayer de récupérer le profil, mais ne pas échouer si RLS bloque
+      try {
+        const profileData = await fetchProfile(data.user.id);
+        if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+          setProfile(profileData as Profile);
+        } else {
+          // Créer un profil par défaut si aucun profil trouvé
+          console.log('Aucun profil trouvé, création d\'un profil par défaut');
+          const defaultProfile = {
+            id: data.user.id,
+            email: data.user.email,
+            full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Utilisateur',
+            role: 'tenant' as const,
+            phone: null,
+            city: null,
+            created_at: new Date().toISOString()
+          };
+          setProfile(defaultProfile);
+        }
+      } catch (profileErr) {
+        console.warn('Erreur lors de la récupération du profil:', profileErr);
+        // Créer un profil par défaut en cas d'erreur
+        const defaultProfile = {
+          id: data.user.id,
+          email: data.user.email,
+          full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Utilisateur',
+          role: 'tenant' as const,
+          phone: null,
+          city: null,
+          created_at: new Date().toISOString()
+        };
+        setProfile(defaultProfile);
       }
     }
   };
