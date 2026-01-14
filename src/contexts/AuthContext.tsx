@@ -155,6 +155,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (profileData && typeof profileData === 'object' && 'id' in profileData) {
             setProfile(profileData as Profile);
+
+            // Redirection après confirmation d'email
+            if (_event === 'SIGNED_IN' || _event === 'USER_UPDATED') {
+              const userRole = (profileData as Profile).role;
+
+              // Rediriger selon le rôle
+              if (userRole === 'tenant') {
+                // Redirection vers TenantDashboard (déjà géré par App.tsx)
+                console.log('✅ Locataire connecté - redirection vers TenantDashboard');
+              } else if (userRole === 'owner') {
+                // Redirection vers OwnerDashboard (déjà géré par App.tsx)
+                console.log('✅ Propriétaire connecté - redirection vers OwnerDashboard');
+              }
+            }
           } else {
             // CRITICAL FIX: Use fallback profile instead of null to prevent disconnect
             setProfile(getFallbackProfile(session.user));
