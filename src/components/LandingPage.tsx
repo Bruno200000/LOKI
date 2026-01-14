@@ -534,7 +534,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                   onMouseEnter={() => setHoveredCard(house.id)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
-                  <div className="relative overflow-hidden">
+                  <div
+                    className="relative overflow-hidden cursor-pointer"
+                    onClick={() => window.location.href = `/property/${house.id}`}
+                  >
                     <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
                       {(() => {
                         // Logique pour détecter les vidéos disponibles (priorité: video_url puis videos[])
@@ -624,7 +627,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                   </div>
 
                   <div className="p-4 lg:p-6">
-                    <h3 className="text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-ci-orange-600 transition-colors line-clamp-2">
+                    <h3
+                      onClick={() => window.location.href = `/property/${house.id}`}
+                      className="text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-ci-orange-600 transition-colors line-clamp-2 cursor-pointer"
+                    >
                       {house.title}
                     </h3>
                     <div className="flex items-center text-slate-500 mb-3">
