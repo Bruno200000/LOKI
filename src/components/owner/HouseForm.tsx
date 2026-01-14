@@ -4,46 +4,29 @@ import { supabase, House } from '../../lib/supabase';
 import { X, AlertCircle, CheckCircle, Upload, Loader, FileText, Eye } from 'lucide-react';
 
 const BOUAKE_NEIGHBORHOODS = [
-  "Aéroport",
-  "Ahougnanssou",
-  "Air France 1",
-  "Air France 2",
-  "Air France 3",
-  "Allokokro",
-  "Attienkro",
-  "Beaufort",
-  "Belleville 1",
-  "Belleville 2",
-  "Broukro 1",
-  "Broukro 2",
-  "Camp Militaire",
-  "Commerce",
-  "Dar-es-Salam 1",
-  "Dar-es-Salam 2",
-  "Dar-es-Salam 3",
-  "Dougouba",
-  "Gonfreville",
-  "Houphouët-Ville",
-  "IDESSA",
-  "Kamounoukro",
-  "Kanakro",
-  "Kennedy",
-  "Koko",
-  "Kodiakoffikro",
-  "Konankankro",
-  "Liberté",
-  "Lycée Municipal",
-  "Mamianou",
-  "N'Dakro",
-  "N'Gattakro",
-  "N'Gouatanoukro",
-  "Niankoukro",
-  "Nimbo",
-  "Sokoura",
-  "Tièrèkro",
-  "Tolla Kouadiokro",
-  "Zone Industrielle",
+  "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
+  "Allokokro", "Attienkro", "Beaufort", "Belleville 1", "Belleville 2",
+  "Broukro 1", "Broukro 2", "Camp Militaire", "Commerce", "Dar-es-Salam 1",
+  "Dar-es-Salam 2", "Dar-es-Salam 3", "Dougouba", "Gonfreville", "Houphouët-Ville",
+  "IDESSA", "Kamounoukro", "Kanakro", "Kennedy", "Koko", "Kodiakoffikro",
+  "Konankankro", "Liberté", "Lycée Municipal", "Mamianou", "N'Dakro",
+  "N'Gattakro", "N'Gouatanoukro", "Niankoukro", "Nimbo", "Sokoura",
+  "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle",
 ];
+
+const ABIDJAN_NEIGHBORHOODS = [
+  "Abobo", "Adjamé", "Anyama", "Attécoubé", "Bingerville",
+  "Cocody - Angré", "Cocody - Deux Plateaux", "Cocody - M'Pouto", "Cocody - Palmeraie",
+  "Cocody - Riviera 1", "Cocody - Riviera 2", "Cocody - Riviera 3", "Cocody - Riviera 4",
+  "Cocody - Riviera Faya", "Koumassi", "Marcory - Biétry", "Marcory - Résidentiel",
+  "Marcory - Zone 4", "Plateau", "Port-Bouët", "Songon", "Treichville",
+  "Yopougon - Maroc", "Yopougon - Niangon", "Yopougon - Selmer",
+];
+
+const NEIGHBORHOODS_BY_CITY: Record<string, string[]> = {
+  "Bouaké": BOUAKE_NEIGHBORHOODS,
+  "Abidjan": ABIDJAN_NEIGHBORHOODS,
+};
 
 interface HouseFormProps {
   house?: House | null;
@@ -729,14 +712,15 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Ville (Bouaké)
+                  Ville *
                 </label>
                 <select
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value, neighborhood: '' })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
                   required
                 >
+                  <option value="Abidjan">Abidjan</option>
                   <option value="Bouaké">Bouaké</option>
                 </select>
               </div>
@@ -744,7 +728,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Quartier (Bouaké) *
+                Quartier ({formData.city}) *
               </label>
               <select
                 value={formData.neighborhood}
@@ -753,7 +737,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                 required
               >
                 <option value="">Sélectionner un quartier</option>
-                {BOUAKE_NEIGHBORHOODS.map((q) => (
+                {(NEIGHBORHOODS_BY_CITY[formData.city] || []).map((q) => (
                   <option key={q} value={q}>{q}</option>
                 ))}
               </select>

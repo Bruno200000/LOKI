@@ -231,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: sanitizedEmail,
       password,
       options: {
+        emailRedirectTo: 'https://lokivoire.pro/?view=dashboard',
         data: {
           full_name: sanitizedName,
           role,

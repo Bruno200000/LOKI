@@ -94,7 +94,29 @@ export const HouseBrowser: React.FC = () => {
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [neighborhoodFilter, setNeighborhoodFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
+
+  const CITY_QUARTIER: Record<string, string[]> = {
+    'Abidjan': [
+      "Abobo", "Adjamé", "Anyama", "Attécoubé", "Bingerville",
+      "Cocody - Angré", "Cocody - Deux Plateaux", "Cocody - M'Pouto", "Cocody - Palmeraie",
+      "Cocody - Riviera 1", "Cocody - Riviera 2", "Cocody - Riviera 3", "Cocody - Riviera 4",
+      "Cocody - Riviera Faya", "Koumassi", "Marcory - Biétry", "Marcory - Résidentiel",
+      "Marcory - Zone 4", "Plateau", "Port-Bouët", "Songon", "Treichville",
+      "Yopougon - Maroc", "Yopougon - Niangon", "Yopougon - Selmer",
+    ],
+    'Bouaké': [
+      "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
+      "Allokokro", "Attienkro", "Beaufort", "Belleville 1", "Belleville 2",
+      "Broukro 1", "Broukro 2", "Camp Militaire", "Commerce", "Dar-es-Salam 1",
+      "Dar-es-Salam 2", "Dar-es-Salam 3", "Dougouba", "Gonfreville", "Houphouët-Ville",
+      "IDESSA", "Kamounoukro", "Kanakro", "Kennedy", "Koko", "Kodiakoffikro",
+      "Konankankro", "Liberté", "Lycée Municipal", "Mamianou", "N'Dakro",
+      "N'Gattakro", "N'Gouatanoukro", "Niankoukro", "Nimbo", "Sokoura",
+      "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle"
+    ]
+  };
 
   useEffect(() => {
     fetchHouses();
@@ -102,7 +124,7 @@ export const HouseBrowser: React.FC = () => {
 
   useEffect(() => {
     filterHouses();
-  }, [houses, searchTerm, maxPrice, neighborhoodFilter, selectedType]);
+  }, [houses, searchTerm, maxPrice, neighborhoodFilter, cityFilter, selectedType]);
 
   const fetchHouses = async () => {
     try {
@@ -137,6 +159,10 @@ export const HouseBrowser: React.FC = () => {
 
     if (selectedType && selectedType !== 'all') {
       filtered = filtered.filter((house) => house.type === selectedType);
+    }
+
+    if (cityFilter) {
+      filtered = filtered.filter((house) => (house.city || '').toLowerCase() === cityFilter.toLowerCase());
     }
 
     if (neighborhoodFilter) {
@@ -193,16 +219,34 @@ export const HouseBrowser: React.FC = () => {
             </select>
 
             <select
+              value={cityFilter}
+              onChange={(e) => {
+                setCityFilter(e.target.value);
+                setNeighborhoodFilter('');
+              }}
+              className="px-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap focus:ring-2 focus:ring-ci-orange-500 outline-none shadow-sm transition-all flex-shrink-0"
+            >
+              <option value="">Toute ville</option>
+              <option value="Abidjan">Abidjan</option>
+              <option value="Bouaké">Bouaké</option>
+            </select>
+
+            <select
               value={neighborhoodFilter}
               onChange={(e) => setNeighborhoodFilter(e.target.value)}
               className="px-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap focus:ring-2 focus:ring-ci-orange-500 outline-none shadow-sm transition-all flex-shrink-0"
             >
               <option value="">Tout quartier</option>
-              <option value="Commerce">Commerce</option>
-              <option value="Koko">Koko</option>
-              <option value="Kennedy">Kennedy</option>
-              <option value="Air France">Air France</option>
-              <option value="Zone Industrielle">Zone</option>
+              {cityFilter && CITY_QUARTIER[cityFilter] ? (
+                CITY_QUARTIER[cityFilter].map(q => (
+                  <option key={q} value={q}>{q}</option>
+                ))
+              ) : (
+                // Si pas de ville, on peut montrer une liste générique ou vide
+                [...CITY_QUARTIER['Abidjan'], ...CITY_QUARTIER['Bouaké']].sort().map(q => (
+                  <option key={q} value={q}>{q}</option>
+                ))
+              )}
             </select>
 
             <div className="flex items-center bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm transition-all flex-shrink-0">
@@ -234,6 +278,7 @@ export const HouseBrowser: React.FC = () => {
           <button
             onClick={() => {
               setSearchTerm('');
+              setCityFilter('');
               setNeighborhoodFilter('');
               setSelectedType('all');
               setMaxPrice('');

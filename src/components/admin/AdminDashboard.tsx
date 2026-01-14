@@ -622,11 +622,64 @@ export const AdminDashboard: React.FC = () => {
 
       console.log('✅ Maison supprimée avec succès');
       alert('Maison supprimée avec succès');
-      fetchHouses(); // Rafraîchir la liste
-      fetchStats(); // Mettre à jour les stats
+      fetchHouses();
+      fetchStats();
     } catch (error: any) {
       console.error('❌ Erreur deleteHouse:', error);
       alert(error.message || 'Erreur lors de la suppression de la maison');
+    }
+  };
+
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm(`Supprimer cette demande de réservation ?`)) return;
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      if (error) throw error;
+      alert('Demande supprimée');
+      fetchBookingsWithNames();
+      fetchStats();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      alert('Erreur lors de la suppression');
+    }
+  };
+
+  const deleteContact = async (contactId: number) => {
+    if (!confirm(`Supprimer ce contact ?`)) return;
+    try {
+      const { error } = await supabase.from('property_contacts').delete().eq('id', contactId);
+      if (error) throw error;
+      alert('Contact supprimé');
+      fetchPropertyContacts();
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      alert('Erreur lors de la suppression');
+    }
+  };
+
+  const updateUserRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === 'owner' ? 'tenant' : 'owner';
+    if (!confirm(`Changer le rôle de l'utilisateur en ${newRole} ?`)) return;
+    try {
+      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+      if (error) throw error;
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      alert('Erreur lors du changement de rôle');
+    }
+  };
+
+  const toggleHouseStatus = async (houseId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'available' ? 'taken' : 'available';
+    try {
+      const { error } = await supabase.from('houses').update({ status: newStatus }).eq('id', houseId);
+      if (error) throw error;
+      fetchHouses();
+      fetchStats();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Erreur lors du changement de statut');
     }
   };
 
@@ -986,12 +1039,20 @@ export const AdminDashboard: React.FC = () => {
                             {new Date(user.created_at).toLocaleDateString('fr-FR')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => deleteUser(user.id, user.email || '')}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Supprimer
-                            </button>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => updateUserRole(user.id, user.role)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                Changer Rôle
+                              </button>
+                              <button
+                                onClick={() => deleteUser(user.id, user.email || '')}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1025,6 +1086,7 @@ export const AdminDashboard: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Loyer mensuel</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
@@ -1070,6 +1132,14 @@ export const AdminDashboard: React.FC = () => {
                               {booking.status === 'confirmed' ? 'Confirmée' :
                                 booking.status === 'pending' ? 'En attente' : 'Annulée'}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => deleteBooking(booking.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Supprimer
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1181,12 +1251,15 @@ export const AdminDashboard: React.FC = () => {
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${house.status === 'available'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                                }`}>
+                              <button
+                                onClick={() => toggleHouseStatus(house.id, house.status)}
+                                className={`px-2 py-1 text-xs font-medium rounded-full transition-colors ${house.status === 'available'
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                  }`}
+                              >
                                 {house.status === 'available' ? 'Disponible' : 'Pris'}
-                              </span>
+                              </button>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center gap-2">
@@ -1332,6 +1405,13 @@ export const AdminDashboard: React.FC = () => {
                                   Confirmée
                                 </span>
                               )}
+                              <button
+                                onClick={() => deleteContact(contact.id)}
+                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors ml-auto"
+                                title="Supprimer le contact"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </td>
                         </tr>

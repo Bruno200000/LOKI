@@ -14,9 +14,31 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'house' | 'residence' | 'land' | 'shop'>('all');
   const [filteredHouses, setFilteredHouses] = useState<House[]>([]);
+  const [searchCity, setSearchCity] = useState('');
   const [searchNeighborhood, setSearchNeighborhood] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
+
+  const CITY_QUARTIER: Record<string, string[]> = {
+    'Abidjan': [
+      "Abobo", "Adjamé", "Anyama", "Attécoubé", "Bingerville",
+      "Cocody - Angré", "Cocody - Deux Plateaux", "Cocody - M'Pouto", "Cocody - Palmeraie",
+      "Cocody - Riviera 1", "Cocody - Riviera 2", "Cocody - Riviera 3", "Cocody - Riviera 4",
+      "Cocody - Riviera Faya", "Koumassi", "Marcory - Biétry", "Marcory - Résidentiel",
+      "Marcory - Zone 4", "Plateau", "Port-Bouët", "Songon", "Treichville",
+      "Yopougon - Maroc", "Yopougon - Niangon", "Yopougon - Selmer",
+    ],
+    'Bouaké': [
+      "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
+      "Allokokro", "Attienkro", "Beaufort", "Belleville 1", "Belleville 2",
+      "Broukro 1", "Broukro 2", "Camp Militaire", "Commerce", "Dar-es-Salam 1",
+      "Dar-es-Salam 2", "Dar-es-Salam 3", "Dougouba", "Gonfreville", "Houphouët-Ville",
+      "IDESSA", "Kamounoukro", "Kanakro", "Kennedy", "Koko", "Kodiakoffikro",
+      "Konankankro", "Liberté", "Lycée Municipal", "Mamianou", "N'Dakro",
+      "N'Gattakro", "N'Gouatanoukro", "Niankoukro", "Nimbo", "Sokoura",
+      "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle"
+    ]
+  };
 
   const handleGetStarted = () => {
     // Rediriger directement vers la page de connexion en forçant l'état d'authentification
@@ -29,19 +51,18 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
   }, []);
 
   useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredHouses(houses);
-    } else {
-      setFilteredHouses(houses.filter(house => house.type === selectedCategory));
-    }
-  }, [selectedCategory, houses]);
-
-  useEffect(() => {
-    let filtered = houses;
+    let filtered = [...houses];
 
     // Filtrer par catégorie
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(house => house.type === selectedCategory);
+    }
+
+    // Filtrer par ville
+    if (searchCity) {
+      filtered = filtered.filter(house =>
+        house.city && house.city.toLowerCase() === searchCity.toLowerCase()
+      );
     }
 
     // Filtrer par quartier
@@ -58,26 +79,19 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
     }
 
     setFilteredHouses(filtered);
-  }, [selectedCategory, searchNeighborhood, maxPrice, houses]);
+  }, [selectedCategory, searchCity, searchNeighborhood, maxPrice, houses]);
 
   useEffect(() => {
-    // Liste prédéfinie des quartiers disponibles
-    const predefinedNeighborhoods = [
-      'Aéroport', 'Ahougnanssou', 'Air France 1', 'Air France 2', 'Air France 3',
-      'Allokokro', 'Attienkro', 'Beaufort', 'Belleville 1', 'Belleville 2',
-      'Broukro 1', 'Broukro 2', 'Camp Militaire', 'Commerce', 'Dar-es-Salam 1',
-      'Dar-es-Salam 2', 'Dar-es-Salam 3', 'Dougouba', 'Gonfreville', 'Houphouët-Ville',
-      'IDESSA', 'Kamounoukro', 'Kanakro', 'Kennedy', 'Koko', 'Kodiakoffikro',
-      'Konankankro', 'Liberté', 'Lycée Municipal', 'Mamianou', 'N\'Dakro',
-      'N\'Gattakro', 'N\'Gouatanoukro', 'Niankoukro', 'Nimbo', 'Sokoura',
-      'Tièrèkro', 'Tolla Kouadiokro', 'Zone Industrielle'
-    ];
-
-    // Extraire les quartiers uniques des maisons et combiner avec la liste prédéfinie
-    const houseNeighborhoods = houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood));
-    const allNeighborhoods = [...new Set([...predefinedNeighborhoods, ...houseNeighborhoods])].sort();
-    setNeighborhoods(allNeighborhoods);
-  }, [houses]);
+    if (searchCity && CITY_QUARTIER[searchCity]) {
+      setNeighborhoods(CITY_QUARTIER[searchCity]);
+    } else {
+      // Si aucune ville, montrer tous les quartiers uniques existants
+      const houseNeighborhoods = houses.map(house => house.neighborhood).filter((neighborhood): neighborhood is string => Boolean(neighborhood));
+      const allPredefined = [...CITY_QUARTIER['Abidjan'], ...CITY_QUARTIER['Bouaké']];
+      const allNeighborhoods = [...new Set([...allPredefined, ...houseNeighborhoods])].sort();
+      setNeighborhoods(allNeighborhoods);
+    }
+  }, [searchCity, houses]);
 
   const getPriceDisplay = (house: House) => {
     switch (house.type) {
@@ -443,20 +457,37 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
 
           {/* Filtres de recherche */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {/* Filtre par catégorie */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Type de bien</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value as any)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
                 >
                   <option value="all">Tous les types</option>
-                  <option value="house">Maisons</option>
-                  <option value="residence">Résidences</option>
-                  <option value="land">Terrains</option>
+                  <option value="house">Locations</option>
+                  <option value="residence">Meublés</option>
+                  <option value="land">Ventes</option>
                   <option value="shop">Magasins</option>
+                </select>
+              </div>
+
+              {/* Filtre par ville */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Ville</label>
+                <select
+                  value={searchCity}
+                  onChange={(e) => {
+                    setSearchCity(e.target.value);
+                    setSearchNeighborhood(''); // Réinitialiser le quartier si on change de ville
+                  }}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
+                >
+                  <option value="">Toutes les villes</option>
+                  <option value="Abidjan">Abidjan</option>
+                  <option value="Bouaké">Bouaké</option>
                 </select>
               </div>
 
@@ -466,7 +497,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                 <select
                   value={searchNeighborhood}
                   onChange={(e) => setSearchNeighborhood(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
                 >
                   <option value="">Tous les quartiers</option>
                   {neighborhoods.map((neighborhood) => (
@@ -479,23 +510,24 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
 
               {/* Filtre par prix maximum */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Prix maximum (FCFA)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Budget max (FCFA)</label>
                 <input
                   type="number"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="Ex: 200000"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 outline-none transition"
+                  placeholder="Ex: 500000"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-ci-orange-500 outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Bouton pour réinitialiser les filtres */}
-            {(selectedCategory !== 'all' || searchNeighborhood || maxPrice) && (
+            {(selectedCategory !== 'all' || searchCity || searchNeighborhood || maxPrice) && (
               <div className="mt-4 text-center">
                 <button
                   onClick={() => {
                     setSelectedCategory('all');
+                    setSearchCity('');
                     setSearchNeighborhood('');
                     setMaxPrice('');
                   }}
