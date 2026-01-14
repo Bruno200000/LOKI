@@ -527,17 +527,19 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
           ) : filteredHouses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
               {filteredHouses.map((house, index) => (
-                <div
+                <a
                   key={house.id}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group"
+                  href={`/property/${house.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = `/property/${house.id}`;
+                  }}
+                  className="block bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group cursor-pointer outline-none focus:ring-2 focus:ring-ci-orange-500"
                   style={{ animationDelay: `${index * 0.1}s` }}
                   onMouseEnter={() => setHoveredCard(house.id)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
-                  <div
-                    className="relative overflow-hidden cursor-pointer"
-                    onClick={() => window.location.href = `/property/${house.id}`}
-                  >
+                  <div className="relative overflow-hidden">
                     <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
                       {(() => {
                         // Logique pour détecter les vidéos disponibles (priorité: video_url puis videos[])
@@ -557,9 +559,10 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                         const videoSrc = getVideoSrc();
                         const imageSrc = getImageSrc();
                         const isHovered = hoveredCard === house.id;
+                        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-                        // Si la carte est survolée et qu'il y a une vidéo, afficher la vidéo
-                        if (isHovered && videoSrc) {
+                        // Si la carte est survolée et qu'il y a une vidéo, afficher la vidéo (désactivé sur tactile pour éviter les bugs de clic)
+                        if (isHovered && videoSrc && !isTouch) {
                           return (
                             <video
                               src={videoSrc}
@@ -627,10 +630,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                   </div>
 
                   <div className="p-4 lg:p-6">
-                    <h3
-                      onClick={() => window.location.href = `/property/${house.id}`}
-                      className="text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-ci-orange-600 transition-colors line-clamp-2 cursor-pointer"
-                    >
+                    <h3 className="text-lg lg:text-xl font-bold text-slate-900 mb-2 group-hover:text-ci-orange-600 transition-colors line-clamp-2">
                       {house.title}
                     </h3>
                     <div className="flex items-center text-slate-500 mb-3">
@@ -657,7 +657,6 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
 
                     <div className="flex items-center justify-between">
                       <button
-                        onClick={() => window.location.href = `/property/${house.id}`}
                         className="flex items-center bg-gradient-to-r from-ci-orange-600 to-ci-green-600 hover:from-ci-orange-700 hover:to-ci-green-700 text-white px-3 lg:px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 text-sm"
                       >
                         <Eye className="h-4 w-4 mr-1 lg:mr-2" />
@@ -670,7 +669,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
                       </div>
                     </div>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           ) : houses.length > 0 ? (
