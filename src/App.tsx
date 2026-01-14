@@ -173,7 +173,7 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-ci-orange-600 mb-4"></div>
           <p className="text-slate-600 font-medium">Chargement...</p>
         </div>
       </div>
@@ -185,30 +185,10 @@ function AppContent() {
     return <ResetPassword />;
   }
 
-  // Handle About and Contact pages - show for all users unless they specifically want to go to dashboard
-  if (isAbout || isContact) {
-    // If user is authenticated and wants to view dashboard (not public pages), redirect to dashboard
-    if (user && profile && viewParam === 'dashboard') {
-      return <div></div>; // This will fall through to dashboard logic below
-    }
-
-    // If authentication is forced, don't show these pages - go to login
-    if (forceLogin) {
-      return <div></div>; // This will fall through to authentication logic below
-    }
-
-    // If user is not authenticated and wants to login, don't show these pages
-    if (!showLanding && !user) {
-      return <div></div>; // This will fall through to authentication logic below
-    }
-
-    // Show the public pages for all users
-    if (isAbout) {
-      return <AboutPage />;
-    }
-    if (isContact) {
-      return <ContactPage />;
-    }
+  // Handle About and Contact pages - show for all users unless force login or dashboard view
+  if ((isAbout || isContact) && !forceLogin && viewParam !== 'dashboard') {
+    if (isAbout) return <AboutPage />;
+    if (isContact) return <ContactPage />;
   }
 
   // Handle property details page

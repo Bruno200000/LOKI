@@ -712,14 +712,15 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Aucun résultat trouvé</h3>
               <p className="text-slate-600 mb-6">
-                {selectedCategory !== 'all' || searchNeighborhood || maxPrice
+                {selectedCategory !== 'all' || searchCity || searchNeighborhood || maxPrice
                   ? 'Essayez d\'ajuster vos filtres pour voir plus de résultats.'
                   : 'Revenez bientôt pour découvrir nos nouvelles offres'}
               </p>
-              {(selectedCategory !== 'all' || searchNeighborhood || maxPrice) && (
+              {(selectedCategory !== 'all' || searchCity || searchNeighborhood || maxPrice) && (
                 <button
                   onClick={() => {
                     setSelectedCategory('all');
+                    setSearchCity('');
                     setSearchNeighborhood('');
                     setMaxPrice('');
                   }}

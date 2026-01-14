@@ -90,94 +90,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      (async () => {
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
 
-      if (session?.user) {
-        (async () => {
-          let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
+          if (session?.user) {
+            let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
 
-          if (!profileData) {
-            // Try to force metadata update if profile is missing
-            const fullName = session.user.user_metadata?.full_name ||
-              session.user.user_metadata?.name ||
-              session.user.email?.split('@')[0] || 'User';
+            if (!profileData) {
+              const fullName = session.user.user_metadata?.full_name ||
+                session.user.user_metadata?.name ||
+                session.user.email?.split('@')[0] || 'User';
 
-            const sanitizedName = SecurityUtils.sanitizeInput(fullName);
-            const role = session.user.user_metadata?.role || 'tenant';
+              const sanitizedName = SecurityUtils.sanitizeInput(fullName);
+              const role = session.user.user_metadata?.role || 'tenant';
 
-            try {
-              await supabase.auth.updateUser({
-                data: {
-                  full_name: sanitizedName,
-                  role,
-                },
-              });
-              // Retry fetch one last time
-              profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
-            } catch (err) {
-              // Ignore error
+              try {
+                await supabase.auth.updateUser({
+                  data: {
+                    full_name: sanitizedName,
+                    role,
+                  },
+                });
+                profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
+              } catch (err) { /* silent */ }
+            }
+
+            if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+              setProfile(profileData as Profile);
+            } else {
+              setProfile(getFallbackProfile(session.user));
             }
           }
-
-          if (profileData && typeof profileData === 'object' && 'id' in profileData) {
-            setProfile(profileData as Profile);
-          } else {
-            // CRITICAL FIX: Do not log out if profile fetch fails. Use fallback.
-            setProfile(getFallbackProfile(session.user));
-          }
-        })();
-      }
-      setLoading(false);
+        } catch (err) {
+          console.error('Error fetching initial session/profile:', err);
+        } finally {
+          setLoading(false);
+        }
+      })();
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
 
-        if (session?.user) {
-          let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
+          if (session?.user) {
+            let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
 
-          if (!profileData) {
-            const fullName = session.user.user_metadata?.full_name ||
-              session.user.user_metadata?.name ||
-              session.user.email?.split('@')[0] || 'User';
+            if (!profileData) {
+              const fullName = session.user.user_metadata?.full_name ||
+                session.user.user_metadata?.name ||
+                session.user.email?.split('@')[0] || 'User';
 
-            try {
-              // Ensure metadata is set
-              await supabase.auth.updateUser({
-                data: { full_name: fullName }
-              });
-              profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
-            } catch (e) { /* ignore */ }
-          }
+              try {
+                await supabase.auth.updateUser({
+                  data: { full_name: fullName }
+                });
+                profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
+              } catch (e) { /* ignore */ }
+            }
 
-          if (profileData && typeof profileData === 'object' && 'id' in profileData) {
-            setProfile(profileData as Profile);
-
-            // Redirection après confirmation d'email
-            if (_event === 'SIGNED_IN' || _event === 'USER_UPDATED') {
-              const userRole = (profileData as Profile).role;
-
-              // Rediriger selon le rôle
-              if (userRole === 'tenant') {
-                // Redirection vers TenantDashboard (déjà géré par App.tsx)
-                console.log('✅ Locataire connecté - redirection vers TenantDashboard');
-              } else if (userRole === 'owner') {
-                // Redirection vers OwnerDashboard (déjà géré par App.tsx)
-                console.log('✅ Propriétaire connecté - redirection vers OwnerDashboard');
-              }
+            if (profileData && typeof profileData === 'object' && 'id' in profileData) {
+              setProfile(profileData as Profile);
+            } else {
+              setProfile(getFallbackProfile(session.user));
             }
           } else {
-            // CRITICAL FIX: Use fallback profile instead of null to prevent disconnect
-            setProfile(getFallbackProfile(session.user));
+            setProfile(null);
           }
-        } else {
-          setProfile(null);
+        } catch (err) {
+          console.error('Error in onAuthStateChange:', err);
+        } finally {
+          setLoading(false);
         }
-
-        setLoading(false);
       })();
     });
 
