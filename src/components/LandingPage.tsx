@@ -98,7 +98,7 @@ export function LandingPage({ showBackToDashboard }: LandingPageProps) {
       case 'residence':
         return `${house.price.toLocaleString()} FCFA/nuit`;
       case 'land':
-        return `${house.price.toLocaleString()} FCFA (fixe)`;
+        return `${house.price.toLocaleString()} FCFA (Prix fixe)`;
       case 'house':
       case 'shop':
       default:

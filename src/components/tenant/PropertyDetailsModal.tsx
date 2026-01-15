@@ -175,7 +175,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
               <div className="sticky top-6">
                 <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-8">
                   <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    {house.type === 'land' ? 'Prix total' : 'Loyer par mois'}
+                    {house.type === 'land' ? 'Prix fixe' : house.type === 'residence' ? 'Prix par nuit' : 'Loyer par mois'}
                   </div>
                   <div className="text-4xl font-black text-slate-900 mb-6 font-display">
                     {house.price.toLocaleString()} <span className="text-sm font-bold text-slate-400">FCFA</span>

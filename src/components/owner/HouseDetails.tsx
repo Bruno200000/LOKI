@@ -135,7 +135,9 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                   {house.price.toLocaleString()}
                   <span className="text-sm font-bold ml-1">FCFA</span>
                 </div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Par mois</div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  {house.type === 'residence' ? 'Par nuit' : house.type === 'land' ? 'Prix fixe' : 'Par mois'}
+                </div>
               </div>
             </div>
 

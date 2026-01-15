@@ -54,10 +54,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
       const latest = sorted[sorted.length - 1];
 
       // Calcul frais fixe selon type
-      const commission = house.type === 'residence' ? 2000 : 
-                         house.type === 'house' ? 5000 : 
-                         house.type === 'land' ? 2000 : 
-                         house.type === 'shop' ? 5000 : null;
+      const commission = house.type === 'residence' ? 2000 :
+        house.type === 'house' ? 5000 :
+          house.type === 'land' ? 2000 :
+            house.type === 'shop' ? 5000 : null;
 
       // Créer la réservation (sans paiement côté utilisateur)
       const { error: bookingError } = await supabase
@@ -201,29 +201,26 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
                       <span className="text-slate-700 text-sm sm:text-base">{house.location}, {house.city}</span>
                     </div>
                     <div className="text-slate-900">
-                      <span className="font-medium text-sm sm:text-base">Titre:</span> 
+                      <span className="font-medium text-sm sm:text-base">Titre:</span>
                       <span className="text-sm sm:text-base">{house.title}</span>
                     </div>
                     <div className="text-slate-900">
                       <span className="font-medium text-sm sm:text-base">
-                        {house.type === 'residence' ? 'Prix par nuit:' : 
-                         house.type === 'land' ? 'Prix mensuel estimé:' : 'Prix mensuel:'}
-                      </span> 
+                        {house.type === 'residence' ? 'Prix par nuit:' :
+                          house.type === 'land' ? 'Prix fixe:' : 'Prix mensuel:'}
+                      </span>
                       <span className="text-sm sm:text-base">
                         {house.price.toLocaleString()} FCFA
-                        {house.type === 'land' && (
-                          <span className="text-xs text-slate-500 ml-1">(estimation)</span>
-                        )}
                       </span>
                     </div>
                     <div className="text-slate-900">
-                      <span className="font-medium text-sm sm:text-base">Chambres:</span> 
+                      <span className="font-medium text-sm sm:text-base">Chambres:</span>
                       <span className="text-sm sm:text-base">
                         {house.bedrooms || (house.type === 'land' || house.type === 'shop' ? 'N/A' : '1')}
                       </span>
                     </div>
                     <div className="text-slate-900">
-                      <span className="font-medium text-sm sm:text-base">Salles de bain:</span> 
+                      <span className="font-medium text-sm sm:text-base">Salles de bain:</span>
                       <span className="text-sm sm:text-base">
                         {house.bathrooms || (house.type === 'land' || house.type === 'shop' ? 'N/A' : '1')}
                       </span>
@@ -266,7 +263,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
                       </div>
                     </div>
                     <div className="text-slate-900">
-                      <span className="font-medium text-sm sm:text-base">Email:</span> 
+                      <span className="font-medium text-sm sm:text-base">Email:</span>
                       <span className="text-sm sm:text-base">{profile?.email || user?.email}</span>
                     </div>
                   </div>
@@ -282,7 +279,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
                       <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span className="text-sm sm:text-base">Dates de réservation</span>
                     </h3>
-                    
+
                     {/* Date Input and Add Button */}
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row gap-3">
@@ -305,16 +302,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
                           Ajouter
                         </button>
                       </div>
-                      
+
                       {/* Selected Dates Display */}
                       {selectedDates.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {selectedDates.sort().map(d => (
                             <span key={d} className="inline-flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-slate-100 rounded-full text-xs sm:text-sm">
                               {d}
-                              <button 
-                                type="button" 
-                                onClick={() => removeDate(d)} 
+                              <button
+                                type="button"
+                                onClick={() => removeDate(d)}
                                 className="text-slate-500 hover:text-slate-700 text-sm sm:text-base font-bold"
                               >
                                 ×
@@ -323,7 +320,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ house, onBack }) => {
                           ))}
                         </div>
                       )}
-                      
+
                       <p className="text-xs sm:text-sm text-slate-500 mt-2">
                         Sélectionnez des dates entre demain et dans 6 mois. Vous pouvez en ajouter plusieurs.
                       </p>

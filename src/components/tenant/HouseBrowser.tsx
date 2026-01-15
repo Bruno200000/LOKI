@@ -343,7 +343,13 @@ export const HouseBrowser: React.FC = () => {
                         {house.price.toLocaleString()}
                         <span className="text-xs font-bold text-slate-400 ml-1">FCFA</span>
                       </div>
-                      {house.type !== 'land' && <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1">Par mois</div>}
+                      {house.type === 'residence' ? (
+                        <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1">Par nuit</div>
+                      ) : house.type === 'land' ? (
+                        <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1">Prix fixe</div>
+                      ) : (
+                        <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1">Par mois</div>
+                      )}
                     </div>
                     <div className="bg-ci-orange-500 text-white p-2 rounded-xl">
                       <Eye className="w-5 h-5" />
