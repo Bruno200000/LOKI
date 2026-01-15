@@ -393,62 +393,111 @@ export const AdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Récupération des réservations avec noms...');
 
-      // Récupérer les réservations
+      // 1. Essayer via RPC (plus performant et contourne RLS)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_bookings_for_admin');
+
+      if (!rpcError && rpcData) {
+        console.log('✅ Réservations récupérées via RPC:', rpcData.length);
+        const mappedBookings = rpcData.map((b: any) => ({
+          id: b.id,
+          house_id: b.house_id,
+          tenant_id: b.tenant_id,
+          owner_id: b.owner_id,
+          start_date: b.start_date,
+          move_in_date: b.move_in_date,
+          status: b.status,
+          commission_fee: b.commission_fee,
+          monthly_rent: b.monthly_rent,
+          notes: b.notes,
+          created_at: b.created_at,
+          tenant_profile: {
+            id: b.tenant_id,
+            full_name: b.tenant_full_name,
+            email: b.tenant_email,
+            phone: b.tenant_phone
+          },
+          owner_profile: {
+            id: b.owner_id,
+            full_name: b.owner_full_name,
+            email: b.owner_email,
+            phone: b.owner_phone
+          },
+          house_info: {
+            id: String(b.house_id),
+            title: b.house_title,
+            city: b.house_city,
+            price: b.house_price
+          }
+        }));
+        setBookings(mappedBookings);
+        return;
+      }
+
+      console.warn('⚠️ RPC bookings failed or not found, falling back to standard fetch:', rpcError?.message);
+
+      // 2. Fallback: Méthode standard (peut échouer si RLS mal configuré)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          house_id,
-          tenant_id,
-          owner_id,
-          start_date,
-          move_in_date,
-          status,
-          commission_fee,
-          monthly_rent,
-          notes,
-          created_at
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (bookingsError) throw bookingsError;
 
-      // Récupérer les noms des utilisateurs
-      const userIds = new Set<string>();
-      bookingsData?.forEach(booking => {
-        userIds.add(booking.tenant_id);
-        userIds.add(booking.owner_id);
-      });
+      if (!bookingsData || bookingsData.length === 0) {
+        setBookings([]);
+        return;
+      }
 
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', Array.from(userIds));
+      // Récupérer les noms des utilisateurs (Safe fetch)
+      let profilesData: any[] = [];
+      try {
+        const userIds = new Set<string>();
+        bookingsData.forEach(booking => {
+          if (booking.tenant_id) userIds.add(booking.tenant_id);
+          if (booking.owner_id) userIds.add(booking.owner_id);
+        });
 
-      if (profilesError) throw profilesError;
+        if (userIds.size > 0) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', Array.from(userIds));
 
-      // Récupérer les noms des maisons
-      const houseIds = new Set<string>();
-      bookingsData?.forEach(booking => {
-        houseIds.add(booking.house_id);
-      });
+          if (!error && data) profilesData = data;
+        }
+      } catch (e) {
+        console.warn('⚠️ Erreur fetch profiles details:', e);
+      }
 
-      const { data: housesData, error: housesError } = await supabase
-        .from('houses')
-        .select('id, title')
-        .in('id', Array.from(houseIds));
+      // Récupérer les noms des maisons (Safe fetch)
+      let housesData: any[] = [];
+      try {
+        const houseIds = new Set<string>();
+        bookingsData.forEach(booking => {
+          if (booking.house_id) houseIds.add(booking.house_id);
+        });
 
-      if (housesError) throw housesError;
+        if (houseIds.size > 0) {
+          const { data, error } = await supabase
+            .from('houses')
+            .select('id, title')
+            .in('id', Array.from(houseIds));
+
+          if (!error && data) housesData = data;
+        }
+      } catch (e) {
+        console.warn('⚠️ Erreur fetch houses details:', e);
+      }
 
       // Combiner les données
-      const bookingsWithNames = bookingsData?.map(booking => ({
+      const bookingsWithNames = bookingsData.map(booking => ({
         ...booking,
-        tenant_profile: profilesData?.find(p => p.id === booking.tenant_id),
-        owner_profile: profilesData?.find(p => p.id === booking.owner_id),
-        house_info: housesData?.find(h => h.id === booking.house_id),
-      })) || [];
+        tenant_profile: profilesData.find(p => p.id === booking.tenant_id),
+        owner_profile: profilesData.find(p => p.id === booking.owner_id),
+        house_info: housesData.find(h => h.id === booking.house_id),
+      }));
 
-      console.log('✅ Réservations avec noms:', bookingsWithNames);
+      console.log('✅ Réservations avec noms (Fallback):', bookingsWithNames);
       setBookings(bookingsWithNames);
     } catch (error) {
       console.error('❌ Erreur fetchBookingsWithNames:', error);
