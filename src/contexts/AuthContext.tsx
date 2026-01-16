@@ -13,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,22 +33,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-
-
-
-
     try {
-      // Use wildcard to avoid errors when specific columns (like email) are missing in DB
       let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-
-        return null;
-      }
+      if (error) return null;
       return data;
     } catch (err: any) {
       console.error('Unexpected error fetching profile:', err);
@@ -55,15 +48,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Helper: attempt fetching profile with retries (handles RLS trigger timing issues)
   const attemptFetchProfileWithRetries = async (userId: string, retries = 5, delayMs = 500) => {
     for (let i = 0; i < retries; i++) {
       const p = await fetchProfile(userId);
       if (p) return p;
-      // wait
       await new Promise((res) => setTimeout(res, delayMs));
     }
     return null;
+  };
+
+  // Helper to ensure profile exists in DB
+  const ensureProfileExists = async (user: User) => {
+    let profileData = await attemptFetchProfileWithRetries(user.id, 3, 500);
+
+    if (!profileData) {
+      console.log('Profil manquant dans la BDD, création automatique...');
+      const fullName = user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split('@')[0] || 'Utilisateur';
+
+      const newProfile = {
+        id: user.id,
+        email: user.email,
+        full_name: fullName,
+        role: (user.user_metadata?.role as any) || 'tenant', // Default to tenant for Google Auth
+        phone: user.user_metadata?.phone || null,
+        city: user.user_metadata?.city || null,
+        created_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase.from('profiles').upsert([newProfile]);
+
+      if (!error) {
+        profileData = newProfile;
+      } else {
+        console.error('Erreur lors de la création automatique du profil:', error);
+      }
+    }
+    return profileData;
   };
 
   const refreshProfile = async () => {
@@ -78,7 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Fallback profile creator
     const getFallbackProfile = (user: User): Profile => ({
       id: user.id,
       email: user.email,
@@ -96,26 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
 
           if (session?.user) {
-            let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
-
-            if (!profileData) {
-              const fullName = session.user.user_metadata?.full_name ||
-                session.user.user_metadata?.name ||
-                session.user.email?.split('@')[0] || 'User';
-
-              const sanitizedName = SecurityUtils.sanitizeInput(fullName);
-              const role = session.user.user_metadata?.role || 'tenant';
-
-              try {
-                await supabase.auth.updateUser({
-                  data: {
-                    full_name: sanitizedName,
-                    role,
-                  },
-                });
-                profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
-              } catch (err) { /* silent */ }
-            }
+            const profileData = await ensureProfileExists(session.user);
 
             if (profileData && typeof profileData === 'object' && 'id' in profileData) {
               setProfile(profileData as Profile);
@@ -138,20 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
 
           if (session?.user) {
-            let profileData = await attemptFetchProfileWithRetries(session.user.id, 6, 400);
-
-            if (!profileData) {
-              const fullName = session.user.user_metadata?.full_name ||
-                session.user.user_metadata?.name ||
-                session.user.email?.split('@')[0] || 'User';
-
-              try {
-                await supabase.auth.updateUser({
-                  data: { full_name: fullName }
-                });
-                profileData = await attemptFetchProfileWithRetries(session.user.id, 3, 500);
-              } catch (e) { /* ignore */ }
-            }
+            const profileData = await ensureProfileExists(session.user);
 
             if (profileData && typeof profileData === 'object' && 'id' in profileData) {
               setProfile(profileData as Profile);
@@ -182,8 +171,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ownerType?: 'particulier' | 'agent',
     mainActivityNeighborhood?: string
   ) => {
-
-
     // Validation des entrées plus permissive
     const emailValidation = SecurityUtils.validateEmail(email);
     const passwordValidation = SecurityUtils.validatePassword(password);
@@ -213,8 +200,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sanitizedPhone = SecurityUtils.sanitizeInput(phone);
     const sanitizedCity = SecurityUtils.sanitizeInput(city);
 
-
-
     const { data, error } = await supabase.auth.signUp({
       email: sanitizedEmail,
       password,
@@ -237,13 +222,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
 
-
-
     if (data.user) {
       SecurityMiddleware.logSecurityEvent('SIGNUP_SUCCESS', { email: sanitizedEmail, userId: data.user.id });
-
-      // Ne pas créer le profil immédiatement à cause des RLS
-      // Le profil sera créé lors de la première connexion via le trigger
       console.log('Inscription réussie. Le profil sera créé lors de la confirmation email et première connexion.');
     }
   };
@@ -283,34 +263,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profileData && typeof profileData === 'object' && 'id' in profileData) {
           setProfile(profileData as Profile);
         } else {
-          // Créer un profil par défaut si aucun profil trouvé
-          console.log('Aucun profil trouvé, création d\'un profil par défaut');
-          const defaultProfile = {
-            id: data.user.id,
-            email: data.user.email,
-            full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Utilisateur',
-            role: 'tenant' as const,
-            phone: null,
-            city: null,
-            created_at: new Date().toISOString()
-          };
-          setProfile(defaultProfile);
+          // Check ensure exists
+          await ensureProfileExists(data.user);
         }
       } catch (profileErr) {
         console.error('Erreur lors de la récupération du profil:', profileErr);
-        // Créer un profil par défaut en cas d'erreur
-        const defaultProfile = {
-          id: data.user.id,
-          email: data.user.email,
-          full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Utilisateur',
-          role: 'tenant' as const,
-          phone: null,
-          city: null,
-          created_at: new Date().toISOString()
-        };
-        setProfile(defaultProfile);
       }
     }
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+    if (error) throw error;
   };
 
   const signOut = async () => {
@@ -332,6 +305,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         signUp,
         signIn,
+        signInWithGoogle,
         signOut,
         refreshProfile,
         setProfile,
