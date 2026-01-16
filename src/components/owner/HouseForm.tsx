@@ -516,22 +516,47 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
         propertyData.has_security_system = (formData as any).has_security_system || false;
       }
 
-      if (house) {
-        // Update existing property
-        const { error } = await supabase
-          .from('houses')
-          .update(propertyData)
-          .eq('id', house.id);
+      const performSave = async () => {
+        if (house) {
+          return await supabase
+            .from('houses')
+            .update(propertyData)
+            .eq('id', house.id);
+        } else {
+          return await supabase
+            .from('houses')
+            .insert([propertyData]);
+        }
+      };
 
-        if (error) throw error;
-      } else {
-        // Create new property
-        const { error } = await supabase
-          .from('houses')
-          .insert([propertyData]);
+      let { error } = await performSave();
 
-        if (error) throw error;
+      // Si erreur de clé étrangère (profil manquant), on essaie de créer le profil
+      if (error && (error.code === '23503' || error.message?.includes('violates foreign key constraint'))) {
+        console.log('Profil manquant détecté, tentative de création...');
+
+        // Création du profil manquant
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .upsert([{
+            id: profile.id,
+            email: profile.email || undefined,
+            full_name: profile.full_name || 'Utilisateur',
+            role: profile.role || 'owner',
+            city: profile.city || (formData.city === 'Bouaké' ? 'Bouaké' : 'Abidjan'), // Fallback sur la ville du bien
+            created_at: new Date().toISOString()
+          }]);
+
+        if (!createProfileError) {
+          // Retry save after profile creation
+          const retryResult = await performSave();
+          error = retryResult.error;
+        } else {
+          console.error('Erreur lors de la création du profil automatique:', createProfileError);
+        }
       }
+
+      if (error) throw error;
 
       setSuccess(true);
       setTimeout(() => {
