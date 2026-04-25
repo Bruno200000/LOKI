@@ -1,0 +1,1445 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase, House, Booking, PropertyContact } from '../../lib/supabase';
+import {
+  Plus,
+  Home,
+  Calendar,
+  DollarSign,
+  LogOut,
+  CreditCard as Edit,
+  Trash2,
+  Eye,
+  ExternalLink,
+  Camera,
+  Play,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  User,
+  LayoutDashboard,
+  X,
+  Save,
+  Phone,
+  Mail,
+  MapPin,
+  Star,
+  Zap
+} from 'lucide-react';
+import { PropertyForm } from './PropertyForm';
+import { HouseDetails } from './HouseDetails';
+import { OwnerUpgrade } from './OwnerUpgrade';
+import { Footer } from '../Footer';
+
+export const OwnerDashboard: React.FC = () => {
+  const { profile, signOut, refreshProfile, setProfile } = useAuth();
+  const [houses, setHouses] = useState<House[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [contacts, setContacts] = useState<PropertyContact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showHouseForm, setShowHouseForm] = useState(false);
+  const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
+  const [viewingHouse, setViewingHouse] = useState<House | null>(null);
+  type DashboardView = 'dashboard' | 'profile';
+  const [currentView, setCurrentView] = useState<DashboardView>('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // State for card interactions
+  const [selectedCardFilter, setSelectedCardFilter] = useState<string | null>(null);
+
+  // State for booking management
+  const [showAllBookings, setShowAllBookings] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
+
+  // State for profile editing
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editProfile, setEditProfile] = useState({
+    full_name: profile?.full_name || '',
+    phone: profile?.phone || '',
+    address: profile?.address || ''
+  });
+
+  useEffect(() => {
+    setEditProfile({
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      address: profile?.address || ''
+    });
+  }, [profile?.full_name, profile?.phone, profile?.address]);
+
+  // Profile management functions
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setEditProfile({
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      address: profile?.address || ''
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editProfile.full_name,
+          phone: editProfile.phone,
+          address: editProfile.address
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      setProfile(prev => prev ? { ...prev, ...editProfile } : prev);
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erreur lors de la mise à jour du profil');
+    }
+  };
+
+  const handleProfileInputChange = (field: string, value: string) => {
+    setEditProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // State for calendar
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  // Card interaction handlers
+  const handleCardClick = (filterType: string) => {
+    setSelectedCardFilter(selectedCardFilter === filterType ? null : filterType);
+  };
+
+  // Filter functions based on card selection
+  const getFilteredHouses = () => {
+    if (!selectedCardFilter) return houses;
+
+    switch (selectedCardFilter) {
+      case 'available':
+        return houses.filter(h => h.status === 'available');
+      case 'occupied':
+        return houses.filter(h => h.status === 'taken');
+      default:
+        return houses;
+    }
+  };
+
+  const getFilteredBookings = () => {
+    if (!selectedCardFilter) return bookings;
+
+    switch (selectedCardFilter) {
+      case 'active':
+        return bookings.filter(b => b.status === 'confirmed');
+      case 'pending':
+        return bookings.filter(b => b.status === 'pending');
+      case 'total':
+        return bookings;
+      default:
+        return bookings;
+    }
+  };
+
+  const handleConfirmBooking = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      alert('Réservation confirmée avec succès');
+      fetchBookings(); // Actualiser la liste
+      setShowBookingDetails(false);
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      alert('Erreur lors de la confirmation de la réservation');
+    }
+  };
+
+  const handleViewBookingDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowBookingDetails(true);
+  };
+
+  const handleContactTenant = (booking: Booking) => {
+    // This would typically open a messaging interface or redirect to contact page
+    alert(`Contacter le locataire pour la réservation #${booking.id}`);
+  };
+
+  const handleViewAllBookings = () => {
+    setShowAllBookings(true);
+  };
+
+  const handleShowCalendar = () => {
+    setShowCalendar(true);
+  };
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchHouses();
+      fetchBookings();
+      fetchContacts();
+    }
+  }, [profile?.id]);
+
+  const fetchHouses = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('houses')
+        .select('*')
+        .eq('owner_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setHouses(data || []);
+    } catch (error) {
+      console.error('Error fetching houses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBookings = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setLoading(true);
+      // Fetch bookings without joins first
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          house_id,
+          tenant_id,
+          owner_id,
+          start_date,
+          end_date,
+          move_in_date,
+          status,
+          commission_fee,
+          monthly_rent,
+          notes,
+          created_at
+        `)
+        .eq('owner_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (bookingsError) {
+        console.error('❌ Erreur fetchBookings:', bookingsError);
+        throw bookingsError;
+      }
+
+      // Fetch related profiles
+      const userIds = new Set<string>();
+      bookingsData?.forEach(booking => {
+        userIds.add(booking.tenant_id);
+        userIds.add(booking.owner_id);
+      });
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, email')
+        .in('id', Array.from(userIds));
+
+      if (profilesError) throw profilesError;
+
+      // Fetch related houses
+      const houseIds = new Set<number>();
+      bookingsData?.forEach(booking => {
+        houseIds.add(booking.house_id);
+      });
+
+      const { data: housesData, error: housesError } = await supabase
+        .from('houses')
+        .select('id, title, neighborhood, city, price')
+        .in('id', Array.from(houseIds));
+
+      if (housesError) throw housesError;
+
+      // Combine the data
+      const bookingsWithDetails = bookingsData?.map(booking => ({
+        ...booking,
+        tenant_profile: profilesData?.find(p => p.id === booking.tenant_id) || null,
+        house_info: housesData?.find(h => h.id === booking.house_id) || null
+      }));
+
+      console.log('✅ Réservations récupérées:', bookingsWithDetails);
+      setBookings(bookingsWithDetails || []);
+    } catch (error) {
+      console.error('❌ Erreur fetchBookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchContacts = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('property_contacts')
+        .select(`
+          *,
+          house_info:houses(title, type, city)
+        `)
+        .eq('owner_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setContacts(data || []);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    }
+  };
+
+  const handleDeleteHouse = async (houseId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette maison ?')) return;
+
+    try {
+      const { error } = await supabase.from('houses').delete().eq('id', houseId);
+
+      if (error) throw error;
+      await fetchHouses();
+    } catch (error) {
+      console.error('Error deleting house:', error);
+      alert('Erreur lors de la suppression');
+    }
+  };
+
+  const handleEditHouse = (house: House) => {
+    setSelectedHouse(house);
+    setShowHouseForm(true);
+  };
+
+  const handleFormClose = () => {
+    setShowHouseForm(false);
+    setSelectedHouse(null);
+    fetchHouses();
+  };
+
+  const handleFormSuccess = () => {
+    fetchHouses();
+  };
+
+  const handleViewSite = () => {
+    // Redirect to the public site (LandingPage)
+    window.location.href = '/?view=public';
+  };
+
+  const stats = {
+    totalHouses: houses.length,
+    availableHouses: houses.filter((h) => h.status === 'available').length,
+    occupiedHouses: houses.filter((h) => h.status === 'taken').length,
+    totalBookings: bookings.length,
+    activeBookings: bookings.filter((b) => b.status === 'confirmed').length,
+    pendingBookings: bookings.filter((b) => b.status === 'pending').length,
+    completedBookings: bookings.filter((b) => b.status === 'cancelled').length,
+    totalRevenue: bookings
+      .filter((b) => b.status === 'confirmed')
+      .reduce((sum, b) => sum + (b.commission_fee || 0), 0),
+    monthlyRevenue: bookings
+      .filter((b) => {
+        if (b.status !== 'confirmed') return false;
+        const bookingDate = new Date(b.created_at);
+        const now = new Date();
+        return bookingDate.getMonth() === now.getMonth() &&
+          bookingDate.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, b) => sum + (b.commission_fee || 0), 0),
+    occupancyRate: houses.length > 0 ? Math.round((houses.filter(h => h.status === 'taken').length / houses.length) * 100) : 0,
+  };
+
+  if (showHouseForm) {
+    return <PropertyForm house={selectedHouse} onClose={handleFormClose} onSuccess={handleFormSuccess} />;
+  }
+
+  if (viewingHouse) {
+    return <HouseDetails house={viewingHouse} onClose={() => setViewingHouse(null)} />;
+  }
+
+  if (showAllBookings) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">Toutes les réservations</h2>
+              <button
+                onClick={() => setShowAllBookings(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-6 h-6 text-slate-500" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {getFilteredBookings().length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                Aucune réservation trouvée
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {getFilteredBookings().map((booking) => {
+                  const house = houses.find(h => h.id === booking.house_id);
+                  return (
+                    <div
+                      key={booking.id}
+                      className="bg-slate-50 rounded-lg p-4 hover:bg-slate-100 transition cursor-pointer"
+                      onClick={() => handleViewBookingDetails(booking)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-4 h-4 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                            booking.status === 'pending' ? 'bg-yellow-500' :
+                              booking.status === 'cancelled' ? 'bg-red-500' :
+                                'bg-blue-500'
+                            }`}></div>
+                          <div>
+                            <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
+                            <p className="text-sm text-slate-600">
+                              {new Date(booking.created_at).toLocaleDateString()} •
+                              {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date || booking.move_in_date).toLocaleDateString()}
+                            </p>
+                            {booking.tenant_profile?.full_name && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                Locataire: {booking.tenant_profile.full_name}
+                                {booking.tenant_profile.phone && ` • ${booking.tenant_profile.phone}`}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-blue-100 text-blue-800'
+                            }`}>
+                            {booking.status === 'confirmed' ? 'Confirmée' :
+                              booking.status === 'pending' ? 'En attente' :
+                                booking.status === 'cancelled' ? 'Annulée' :
+                                  booking.status === 'active' ? 'Active' :
+                                    booking.status === 'completed' ? 'Terminée' :
+                                      booking.status}
+                          </span>
+                          {booking.commission_fee && (
+                            <span className="text-sm font-medium text-slate-700">
+                              {booking.commission_fee.toLocaleString()} FCFA
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showCalendar) {
+    // Group bookings by date for calendar view
+    const bookingsByDate = getFilteredBookings().reduce((acc, booking) => {
+      const date = new Date(booking.start_date).toDateString();
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(booking);
+      return acc;
+    }, {} as Record<string, Booking[]>);
+
+    const sortedDates = Object.keys(bookingsByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">Calendrier des réservations</h2>
+              <button
+                onClick={() => setShowCalendar(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-6 h-6 text-slate-500" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {sortedDates.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                Aucune réservation à afficher dans le calendrier
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {sortedDates.map((date) => {
+                  const bookingsForDate = bookingsByDate[date];
+                  const dateObj = new Date(date);
+
+                  return (
+                    <div key={date} className="border border-slate-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-ci-orange-600" />
+                        {dateObj.toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </h3>
+
+                      <div className="space-y-3">
+                        {bookingsForDate.map((booking) => {
+                          const house = houses.find(h => h.id === booking.house_id);
+                          return (
+                            <div
+                              key={booking.id}
+                              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                              onClick={() => handleContactTenant(booking)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                                  booking.status === 'pending' ? 'bg-yellow-500' :
+                                    booking.status === 'cancelled' ? 'bg-red-500' :
+                                      'bg-blue-500'
+                                  }`}></div>
+                                <div>
+                                  <p className="font-medium text-slate-900">{booking.house_info?.title || house?.title || 'Propriété inconnue'}</p>
+                                  <p className="text-sm text-slate-600">
+                                    {new Date(booking.start_date).toLocaleTimeString('fr-FR', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })} - {new Date(booking.end_date || booking.move_in_date).toLocaleTimeString('fr-FR', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                  {booking.tenant_profile?.full_name && (
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      Locataire: {booking.tenant_profile.full_name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                      'bg-blue-100 text-blue-800'
+                                  }`}>
+                                  {booking.status === 'confirmed' ? 'Confirmée' :
+                                    booking.status === 'pending' ? 'En attente' :
+                                      booking.status === 'cancelled' ? 'Annulée' :
+                                        booking.status === 'active' ? 'Active' :
+                                          booking.status === 'completed' ? 'Terminée' :
+                                            booking.status}
+                                </span>
+
+                                {booking.commission_fee && (
+                                  <span className="text-sm font-medium text-slate-700">
+                                    {booking.commission_fee.toLocaleString()} FCFA
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 relative">
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`fixed inset-0 z-50 transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} md:hidden`}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <div className="absolute inset-0 bg-black/50"></div>
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div
+        className={`fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:hidden`}
+      >
+        <div className="h-full flex flex-col">
+          <div className="p-4 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-ci-orange-600 rounded-lg flex items-center justify-center">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-slate-900">LOKI</h1>
+                  <p className="text-xs text-slate-600">Propriétaire</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1 rounded-md hover:bg-slate-100"
+                aria-label="Fermer le menu"
+              >
+                <X className="w-6 h-6 text-slate-500" />
+              </button>
+            </div>
+          </div>
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            <button
+              onClick={() => {
+                setCurrentView('dashboard');
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${currentView === ('dashboard' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              Tableau de bord
+            </button>
+            <button
+              onClick={() => {
+                setCurrentView('profile');
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg ${currentView === ('profile' as DashboardView) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+            >
+              <User className="w-5 h-5" />
+              Mon profil
+            </button>
+            <button
+              onClick={handleViewSite}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-700 hover:bg-slate-50"
+            >
+              <ExternalLink className="w-5 h-5" />
+              Voir le site
+            </button>
+            <div className="pt-2 mt-2 border-t border-slate-100">
+              <button
+                onClick={signOut}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
+                Déconnexion
+              </button>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Navigation */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <button
+                type="button"
+                className="md:hidden p-2 -ml-1 rounded-md text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ci-orange-500"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Ouvrir le menu"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity ml-2 md:ml-0">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-ci-orange-600 rounded-lg flex items-center justify-center">
+                  <Home className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg md:text-xl font-bold text-slate-900">LOKI</h1>
+                  <p className="text-xs text-slate-600">Propriétaire</p>
+                </div>
+              </a>
+            </div>
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={() => setCurrentView('profile' as DashboardView)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium ${currentView === ('profile' as DashboardView)
+                  ? 'bg-slate-100 text-slate-900'
+                  : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+              >
+                <Edit className="w-4 h-4" />
+                Modifier profil
+              </button>
+              <button
+                onClick={handleViewSite}
+                className="flex items-center gap-2 px-4 py-2 bg-ci-orange-100 hover:bg-ci-orange-200 text-ci-orange-700 rounded-lg transition text-sm font-medium"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Voir le site
+              </button>
+              <button
+                onClick={signOut}
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                title="Déconnexion"
+                aria-label="Déconnexion"
+              >
+                <LogOut className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Profile View */}
+      {currentView === 'profile' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Mon Profil</h1>
+              <p className="text-slate-600">Gérez vos informations personnelles</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-ci-orange-600 to-ci-green-600 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-white">
+                    <h2 className="text-xl font-bold">{profile?.full_name || 'Utilisateur'}</h2>
+                    <p className="text-ci-orange-100">{profile?.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8">
+                {!isEditingProfile ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <User className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Nom complet</p>
+                          <p className="font-medium text-slate-900">{profile?.full_name || 'Non défini'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <Phone className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Téléphone</p>
+                          <p className="font-medium text-slate-900">{profile?.phone || 'Non défini'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <MapPin className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Adresse</p>
+                          <p className="font-medium text-slate-900">{profile?.address || 'Non définie'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <Mail className="w-6 h-6 text-slate-600" />
+                        <div>
+                          <p className="text-sm text-slate-600">Email</p>
+                          <p className="font-medium text-slate-900">{profile?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center pt-6">
+                      <button
+                        onClick={handleEditProfile}
+                        className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <Edit className="w-5 h-5" />
+                        Modifier le profil
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Nom complet
+                        </label>
+                        <input
+                          type="text"
+                          value={editProfile.full_name}
+                          onChange={(e) => handleProfileInputChange('full_name', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition"
+                          placeholder="Votre nom complet"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Téléphone
+                        </label>
+                        <input
+                          type="tel"
+                          value={editProfile.phone}
+                          onChange={(e) => handleProfileInputChange('phone', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition"
+                          placeholder="Votre numéro de téléphone"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Adresse
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={editProfile.address}
+                          onChange={(e) => handleProfileInputChange('address', e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ci-orange-500 focus:border-ci-orange-500 transition resize-none"
+                          placeholder="Votre adresse complète"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 justify-center pt-6">
+                      <button
+                        onClick={handleSaveProfile}
+                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                      >
+                        <Save className="w-5 h-5" />
+                        Sauvegarder
+                      </button>
+
+                      <button
+                        onClick={handleCancelEdit}
+                        className="bg-slate-500 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard View */}
+      {currentView === 'dashboard' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+          {/* Background animations */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-ci-green-200/20 to-ci-orange-200/20 rounded-full blur-3xl opacity-40 animate-pulse"></div>
+            <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-ci-orange-200/20 to-yellow-200/20 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          </div>
+
+          {/* Welcome Section */}
+          <div className="mb-8 relative z-10">
+            <div className="bg-gradient-to-r from-ci-orange-600 to-ci-green-600 rounded-3xl p-8 text-white shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl font-bold">Bienvenue, {profile?.full_name || 'Propriétaire'} !</h1>
+                    {profile?.plan === 'pro' ? (
+                      <span className="bg-white/20 backdrop-blur-md text-white text-xs font-black px-3 py-1 rounded-full border border-white/30 flex items-center gap-1 shadow-sm">
+                        <Star className="w-3 h-3 fill-white" /> PRO
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="bg-ci-orange-500 hover:bg-ci-orange-400 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg animate-bounce-slow flex items-center gap-1"
+                      >
+                        <Zap className="w-2.5 h-2.5 fill-white" /> UPGRADE TO PRO
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-ci-orange-100 text-lg">Gérez vos propriétés et suivez vos performances</p>
+                </div>
+                <div className="hidden md:flex items-center space-x-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.totalHouses}</div>
+                    <div className="text-sm text-ci-orange-100">Propriétés</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.occupancyRate}%</div>
+                    <div className="text-sm text-ci-orange-100">Occupation</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</div>
+                    <div className="text-sm text-ci-orange-100">FCFA</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 relative z-10">
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${selectedCardFilter === 'total' ? 'ring-2 ring-ci-orange-500 bg-ci-orange-50' : ''
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium">Total Maisons</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
+                  <p className="text-xs text-slate-500 mt-1">Propriétés enregistrées</p>
+                </div>
+                <div className="w-14 h-14 bg-gradient-to-br from-ci-green-500 to-ci-orange-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Home className="w-7 h-7 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('available')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'available' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Disponibles</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.availableHouses}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Home className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('occupied')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'occupied' ? 'ring-2 ring-amber-500 bg-amber-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Occupées</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupiedHouses}</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('occupancy')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'occupancy' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Taux d'occupation</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.occupancyRate}%</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'total' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Total Réservations</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('active')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'active' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Réservations Actives</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.activeBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('pending')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">En Attente</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.pendingBookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+
+            <div
+              onClick={() => handleCardClick('revenue')}
+              className={`bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer transition-all duration-300 ${selectedCardFilter === 'revenue' ? 'ring-2 ring-emerald-500 bg-emerald-50' : 'hover:shadow-lg'
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Revenus Totaux</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">FCFA</p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Réservations Récentes</h3>
+              {loading ? (
+                <div className="text-center py-8 text-slate-500">Chargement...</div>
+              ) : getFilteredBookings().length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  Aucune réservation pour le moment
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {getFilteredBookings().slice(0, 5).map((booking) => {
+                    const house = houses.find(h => h.id === booking.house_id);
+                    return (
+                      <div
+                        key={booking.id}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition cursor-pointer group"
+                        onClick={() => handleContactTenant(booking)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500' :
+                              booking.status === 'pending' ? 'bg-yellow-500' :
+                                booking.status === 'cancelled' ? 'bg-red-500' :
+                                  'bg-blue-500'
+                              }`}></div>
+                            <div>
+                              <p className="font-medium text-slate-900 group-hover:text-ci-orange-600 transition">
+                                {house?.title || 'Propriété inconnue'}
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                {new Date(booking.created_at).toLocaleDateString()} • {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
+                              </p>
+                              {booking.tenant_profile?.full_name && (
+                                <p className="text-xs font-medium text-slate-500 mt-0.5">
+                                  Locataire: {booking.tenant_profile.full_name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-blue-100 text-blue-800'
+                            }`}>
+                            {booking.status === 'confirmed' ? 'Confirmée' :
+                              booking.status === 'pending' ? 'En attente' :
+                                booking.status === 'cancelled' ? 'Annulée' :
+                                  booking.status === 'active' ? 'Active' :
+                                    booking.status === 'completed' ? 'Terminée' :
+                                      booking.status}
+                          </span>
+                          {booking.commission_fee && (
+                            <span className="text-sm font-medium text-slate-700">
+                              {booking.commission_fee.toLocaleString()} FCFA
+                            </span>
+                          )}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button className="p-1 hover:bg-white rounded">
+                              <Eye className="w-4 h-4 text-slate-600" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {getFilteredBookings().length > 5 && (
+                    <button
+                      onClick={handleViewAllBookings}
+                      className="w-full text-ci-orange-600 hover:text-ci-orange-700 font-medium py-2 text-sm hover:bg-ci-orange-50 rounded-lg transition"
+                    >
+                      Voir toutes les réservations ({getFilteredBookings().length}) →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">Contacts Locataires</h3>
+                <span className="bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs font-bold">{contacts.length}</span>
+              </div>
+              {loading ? (
+                <div className="text-center py-8 text-slate-500">Chargement...</div>
+              ) : contacts.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">Aucun contact récent</div>
+              ) : (
+                <div className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {contacts.slice(0, 10).map((contact) => (
+                    <div key={contact.id} className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition flex flex-col gap-2 border border-slate-100">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-full bg-ci-orange-50 flex items-center justify-center shrink-0">
+                             <User className="w-5 h-5 text-ci-orange-600" />
+                           </div>
+                           <div className="min-w-0">
+                             <p className="font-bold text-slate-900 text-sm truncate">{contact.tenant_name}</p>
+                             <p className="text-xs text-slate-500">{new Date(contact.created_at || contact.contact_date).toLocaleDateString()}</p>
+                           </div>
+                         </div>
+                         <a href={`tel:${contact.tenant_phone}`} className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-full transition shrink-0" title="Appeler">
+                           <Phone className="w-4 h-4" />
+                         </a>
+                       </div>
+                       <div className="bg-white p-2 rounded-md border border-slate-100 text-xs text-slate-700 font-medium truncate">
+                         {contact.house_info?.title || 'Propriété supprimée ou introuvable'}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Actions Rapides</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setShowHouseForm(true)}
+                  className="flex flex-col items-center p-4 bg-ci-orange-50 hover:bg-ci-orange-100 rounded-lg transition"
+                >
+                  <Plus className="w-8 h-8 text-ci-orange-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Ajouter Maison</span>
+                </button>
+
+                <button
+                  onClick={() => setCurrentView('profile')}
+                  className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                >
+                  <Edit className="w-8 h-8 text-blue-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Modifier Profil</span>
+                </button>
+
+                <button
+                  onClick={handleViewSite}
+                  className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                >
+                  <ExternalLink className="w-8 h-8 text-green-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Voir le Site</span>
+                </button>
+
+                <button
+                  onClick={handleShowCalendar}
+                  className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
+                >
+                  <Calendar className="w-8 h-8 text-purple-600 mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Calendrier</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-ci-orange-600"></div>
+            </div>
+          ) : houses.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+              <Home className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">Aucune propriété</h3>
+              <p className="text-slate-600 mb-6">
+                Commencez par ajouter votre première propriété
+              </p>
+              <button
+                onClick={() => setShowHouseForm(true)}
+                className="bg-ci-orange-600 hover:bg-ci-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                Ajouter une maison
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {getFilteredHouses().map((house) => (
+                <div
+                  key={house.id}
+                  className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition"
+                >
+                  <div className="aspect-video bg-slate-200 relative">
+                    {house.video_url ? (
+                      <video
+                        src={house.video_url}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    ) : house.image_url ? (
+                      <img
+                        src={house.image_url}
+                        alt={house.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="w-12 h-12 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${house.status === 'available'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                          }`}
+                      >
+                        {house.status === 'available' ? 'Disponible' : 'Pris'}
+                      </span>
+                    </div>
+                    {/* Indicateurs pour les fonctionnalités supplémentaires */}
+                    <div className="absolute bottom-3 right-3 flex gap-1">
+                      {house.photos && house.photos.length > 0 && (
+                        <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
+                          <Camera className="w-3 h-3" />
+                        </div>
+                      )}
+                      {house.virtual_tour_url && (
+                        <div className="bg-black bg-opacity-70 text-white rounded-full p-1.5">
+                          <Play className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-lg text-slate-900 mb-1">{house.title}</h3>
+                    <p className="text-slate-600 text-sm mb-3 line-clamp-2">{house.description}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-2xl font-bold text-ci-orange-600">
+                        {house.price.toLocaleString()} FCFA
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setViewingHouse(house)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Voir
+                      </button>
+                      <button
+                        onClick={() => handleEditHouse(house)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition text-sm font-medium"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDeleteHouse(house.id)}
+                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal Détails Réservation */}
+      {showBookingDetails && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-ci-orange-600" />
+                Détails de la réservation
+              </h2>
+              <button
+                onClick={() => setShowBookingDetails(false)}
+                className="p-2 hover:bg-white rounded-full transition-colors shadow-sm"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Informations Bien</h3>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="font-bold text-slate-900 text-lg leading-tight mb-1">
+                        {selectedBooking.house_info?.title || 'Chargement...'}
+                      </p>
+                      <p className="text-slate-600 flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-ci-orange-500" />
+                        {selectedBooking.house_info?.neighborhood}, {selectedBooking.house_info?.city}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Dates & Prix</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-ci-orange-50 flex items-center justify-center text-ci-orange-600">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500">Date d'entrée souhaitée</p>
+                          <p className="font-semibold text-slate-900">
+                            {new Date(selectedBooking.move_in_date || selectedBooking.start_date).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-ci-green-50 flex items-center justify-center text-ci-green-600">
+                          <DollarSign className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500">Loyer mensuel</p>
+                          <p className="font-bold text-slate-900 text-lg">
+                            {selectedBooking.monthly_rent?.toLocaleString() || selectedBooking.house_info?.price?.toLocaleString() || '0'} <span className="text-sm font-normal">FCFA</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Locataire</h3>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 overflow-hidden">
+                          <User className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {selectedBooking.tenant_profile?.full_name || 'Inconnu'}
+                          </p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase transition-colors ${selectedBooking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                            selectedBooking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                            {selectedBooking.status === 'confirmed' ? 'Confirmé' : 'En attente'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-50 space-y-2">
+                        {selectedBooking.tenant_profile?.phone && (
+                          <a href={`tel:${selectedBooking.tenant_profile.phone}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-ci-orange-600 transition-colors py-1">
+                            <Phone className="w-4 h-4" />
+                            {selectedBooking.tenant_profile.phone}
+                          </a>
+                        )}
+                        <p className="flex items-center gap-2 text-sm text-slate-500">
+                          <Mail className="w-4 h-4" />
+                          {selectedBooking.tenant_profile?.email || 'Pas d\'email'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedBooking.notes && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Notes</h3>
+                      <p className="text-sm text-slate-600 italic bg-slate-50 p-3 rounded-lg border-l-4 border-ci-orange-400">
+                        "{selectedBooking.notes}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-10 flex gap-4">
+                {selectedBooking.status === 'pending' && (
+                  <button
+                    onClick={() => handleConfirmBooking(selectedBooking.id)}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Valider la réservation
+                  </button>
+                )}
+                <button
+                  onClick={() => handleContactTenant(selectedBooking)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] ${selectedBooking.status === 'confirmed'
+                    ? 'bg-ci-orange-600 text-white shadow-lg shadow-ci-orange-100 hover:bg-ci-orange-700'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                >
+                  <Phone className="w-5 h-5" />
+                  Contacter le locataire
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpgradeModal && (
+        <OwnerUpgrade 
+          onClose={() => setShowUpgradeModal(false)}
+          onSuccess={() => {
+            setShowUpgradeModal(false);
+            alert('Félicitations ! Vous êtes maintenant un utilisateur PRO.');
+          }}
+        />
+      )}
+
+      <Footer />
+    </div>
+  );
+};

@@ -1,0 +1,21 @@
+Je vais vous aider à corriger le problème manuellement. Voici ce que vous devez faire :
+
+1. Allez à la ligne 153 du fichier `HouseForm.tsx`
+2. Avant la ligne qui commence par `const removePhoto`, ajoutez une ligne avec juste `};`
+3. Assurez-vous qu'il y a un saut de ligne entre la fin de la fonction `handleVideoUpload` et le début de `removePhoto`
+
+Le résultat devrait ressembler à ceci :
+
+```typescript
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const newPhotos = formData.photos.filter((_, i) => i !== index);
+    setFormData({ ...formData, photos: newPhotos });
+  };
+```
+
+Cette correction ajoute le point-virgule manquant et la fermeture de la fonction `handleVideoUpload`, et assure une séparation claire avec la fonction `removePhoto`.
