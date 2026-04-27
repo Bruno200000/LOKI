@@ -59,6 +59,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         });
 
       if (contactError) throw contactError;
+      console.log('✅ Contact enregistré avec succès dans property_contacts');
 
       // 2. Créer automatiquement une réservation si elle n'existe pas déjà
       if (user?.id) {

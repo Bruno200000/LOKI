@@ -529,6 +529,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Récupération des contacts de propriétés...');
 
+      // Tentative de récupération avec toutes les jointures
       const { data, error } = await supabase
         .from('property_contacts')
         .select(`
@@ -538,11 +539,28 @@ export const AdminDashboard: React.FC = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      console.log('✅ Contacts récupérés:', data?.length);
-      setPropertyContacts(data || []);
+      if (error) {
+        console.warn('⚠️ Échec de récupération avec jointures (possible problème RLS sur les profils):', error.message);
+        
+        // Tentative de repli (fallback) sans les jointures sur les profils/maisons
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('property_contacts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) {
+          console.error('❌ Erreur de repli pour les contacts:', fallbackError);
+          return;
+        }
+
+        console.log('✅ Contacts récupérés en mode simple (sans détails):', fallbackData?.length);
+        setPropertyContacts(fallbackData || []);
+      } else {
+        console.log('✅ Contacts récupérés avec succès:', data?.length);
+        setPropertyContacts(data || []);
+      }
     } catch (error) {
-      console.error('❌ Erreur fetchPropertyContacts:', error);
+      console.error('❌ Erreur critique fetchPropertyContacts:', error);
     }
   };
 
