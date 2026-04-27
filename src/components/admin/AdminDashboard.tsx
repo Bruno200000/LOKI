@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, PropertyContact, House } from '../../lib/supabase';
-import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle, Star, Trash2, Eye } from 'lucide-react';
+import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle, Star, Trash2, Eye, Search } from 'lucide-react';
 
 interface Stats {
   totalOwners: number;
@@ -103,6 +103,9 @@ export const AdminDashboard: React.FC = () => {
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'owner' | 'tenant'>('all');
+  const [contactSearch, setContactSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +120,24 @@ export const AdminDashboard: React.FC = () => {
       setLoading(false);
     };
     fetchData();
+
+    // Abonnement Temps Réel pour les contacts
+    const contactsSubscription = supabase
+      .channel('admin-contacts-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'property_contacts' 
+      }, () => {
+        console.log('🔄 Mise à jour temps réel reçue pour les contacts');
+        fetchPropertyContacts();
+        fetchStats(); // Optionnel : mettre à jour les stats aussi
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(contactsSubscription);
+    };
   }, []);
 
   const fetchHouses = async () => {
@@ -512,12 +533,13 @@ export const AdminDashboard: React.FC = () => {
         .from('property_contacts')
         .select(`
           *,
-          house_info:houses(id,title,type,city),
-          owner_profile:profiles!property_contacts_owner_id_fkey(id,full_name,phone)
+          house_info:houses(id, title, type, city, neighborhood, price),
+          owner_profile:profiles!property_contacts_owner_id_fkey(id, full_name, phone, email)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('✅ Contacts récupérés:', data?.length);
       setPropertyContacts(data || []);
     } catch (error) {
       console.error('❌ Erreur fetchPropertyContacts:', error);
@@ -763,6 +785,25 @@ export const AdminDashboard: React.FC = () => {
     window.location.href = '/?view=public';
   };
 
+  const filteredUsers = users.filter(user => {
+    const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter;
+    const matchesSearch = !userSearch || 
+      user.full_name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      user.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      user.phone?.includes(userSearch);
+    return matchesRole && matchesSearch;
+  });
+
+  const filteredContacts = propertyContacts.filter(contact => {
+    const searchLower = contactSearch.toLowerCase();
+    return !contactSearch || 
+      contact.tenant_name?.toLowerCase().includes(searchLower) ||
+      contact.tenant_phone?.includes(contactSearch) ||
+      contact.owner_name?.toLowerCase().includes(searchLower) ||
+      contact.house_info?.title?.toLowerCase().includes(searchLower) ||
+      contact.neighborhood?.toLowerCase().includes(searchLower);
+  });
+
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200">
@@ -899,70 +940,55 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'overview' && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Propriétaires</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalOwners}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Propriétaires</p>
+                        <p className="text-3xl font-black text-slate-900 mt-1">{stats.totalOwners}</p>
                       </div>
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Users className="w-6 h-6 text-blue-600" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Locataires</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalTenants}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Locataires</p>
+                        <p className="text-3xl font-black text-slate-900 mt-1">{stats.totalTenants}</p>
                       </div>
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Users className="w-6 h-6 text-green-600" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Maisons</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalHouses}</p>
-                        <p className="text-xs text-ci-orange-600 mt-1">
-                          {stats.availableHouses} disponibles • {stats.occupancyRate}% occupées
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Maisons</p>
+                        <p className="text-3xl font-black text-slate-900 mt-1">{stats.totalHouses}</p>
+                        <p className="text-[10px] font-bold text-ci-orange-600 mt-1 uppercase">
+                          {stats.availableHouses} libres • {stats.occupancyRate}% occupées
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Home className="w-6 h-6 text-amber-600" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-slate-600">Demandes</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stats.totalBookings}</p>
-                        <p className="text-xs text-green-600 mt-1">
-                          {stats.activeBookings} confirmées
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Commissions</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{stats.totalCommissions.toLocaleString()} <span className="text-sm">F</span></p>
+                        <p className="text-[10px] font-bold text-green-600 mt-1 uppercase">
+                          Taux: {stats.conversionRate}%
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-purple-600" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-slate-600">Revenus Cumulés</p>
-                        <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalCommissions.toLocaleString()} FCFA</p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Conversion: {stats.conversionRate}%
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 bg-ci-orange-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-ci-orange-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <DollarSign className="w-6 h-6 text-ci-orange-600" />
                       </div>
                     </div>
@@ -970,24 +996,33 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-ci-orange-600 p-6 rounded-xl shadow-lg border border-ci-orange-700 text-white">
-                    <p className="text-ci-orange-100 text-sm font-medium uppercase">Potentiel Total</p>
-                    <p className="text-3xl font-bold mt-1">{stats.totalRevenuePotential.toLocaleString()} FCFA</p>
-                    <p className="text-ci-orange-100 text-xs mt-2">Incluant {stats.activeCommissions} commissions en attente</p>
-                  </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-slate-500 text-sm font-medium uppercase">Commission Moyenne</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{stats.averageCommission.toLocaleString()} FCFA</p>
-                    <p className="text-slate-500 text-xs mt-2">Par conversion réussie</p>
-                  </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <p className="text-slate-500 text-sm font-medium uppercase">Taux d'Emménagement</p>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-3xl font-bold text-slate-900">{stats.occupancyRate}%</p>
-                      <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div className="bg-green-500 h-full rounded-full" style={{ width: `${stats.occupancyRate}%` }} />
-                      </div>
+                  <div className="relative overflow-hidden bg-gradient-to-br from-ci-orange-600 to-ci-orange-700 p-8 rounded-3xl shadow-xl shadow-ci-orange-200 text-white group">
+                    <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                    <p className="text-ci-orange-100 text-xs font-black uppercase tracking-widest">Revenu Potentiel</p>
+                    <p className="text-4xl font-black mt-2 tracking-tighter">{stats.totalRevenuePotential.toLocaleString()} <span className="text-lg">FCFA</span></p>
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold uppercase">{stats.activeCommissions} en attente</span>
                     </div>
+                  </div>
+                  
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                    <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Panier Moyen</p>
+                    <p className="text-3xl font-black text-slate-900 mt-2 tracking-tighter">{stats.averageCommission.toLocaleString()} <span className="text-lg">FCFA</span></p>
+                    <p className="text-slate-400 text-[10px] mt-1 font-bold italic">Par conversion confirmée</p>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Taux d'Occupation</p>
+                      <span className="text-lg font-black text-slate-900">{stats.occupancyRate}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-600 shadow-inner transition-all duration-1000" 
+                        style={{ width: `${stats.occupancyRate}%` }} 
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 font-bold text-center uppercase tracking-tighter">Basé sur {stats.totalHouses} biens listés</p>
                   </div>
                 </div>
 
@@ -1037,10 +1072,46 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'users' && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900">Gestion des Utilisateurs</h2>
-                  <p className="text-slate-600 mt-1">Liste de tous les utilisateurs inscrits</p>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">Gestion des Utilisateurs</h2>
+                      <p className="text-slate-600 mt-1">Liste de tous les utilisateurs inscrits ({filteredUsers.length})</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                        <button
+                          onClick={() => setUserRoleFilter('all')}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${userRoleFilter === 'all' ? 'bg-white text-ci-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                          Tous
+                        </button>
+                        <button
+                          onClick={() => setUserRoleFilter('owner')}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${userRoleFilter === 'owner' ? 'bg-white text-ci-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                          Propriétaires
+                        </button>
+                        <button
+                          onClick={() => setUserRoleFilter('tenant')}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${userRoleFilter === 'tenant' ? 'bg-white text-ci-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                          Locataires
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-ci-orange-500 outline-none w-full md:w-64"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -1056,7 +1127,7 @@ export const AdminDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                      {users.map((user) => (
+                      {filteredUsers.map((user) => (
                         <tr key={user.id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -1354,110 +1425,119 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'contacts' && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-200">
-                  <h2 className="text-xl font-bold text-slate-900">Suivi des Contacts</h2>
-                  <p className="text-slate-600 mt-1">Historique des contacts initiés par les locataires</p>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">Suivi des Contacts</h2>
+                      <p className="text-slate-600 mt-1">Historique des contacts initiés par les locataires ({filteredContacts.length})</p>
+                    </div>
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Rechercher un contact, bien ou quartier..."
+                        value={contactSearch}
+                        onChange={(e) => setContactSearch(e.target.value)}
+                        className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-ci-orange-500 outline-none w-full md:w-80"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Bien</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Quartier</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Locataire</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Téléphone</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Propriétaire</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Statut</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date & Statut</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Bien & Localisation</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Locataire</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Propriétaire</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                      {propertyContacts.map((contact) => (
-                        <tr key={contact.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            {new Date(contact.contact_date).toLocaleDateString('fr-FR')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <div>
-                              <p className="font-medium">{contact.house_info?.title || 'N/A'}</p>
-                              <p className="text-slate-500 text-xs">ID: {contact.house_id}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                              {contact.property_type === 'residence' ? 'Résidence' :
-                                contact.property_type === 'house' ? 'Maison' :
-                                  contact.property_type === 'land' ? 'Terrain' :
-                                    contact.property_type === 'shop' ? 'Magasin' : contact.property_type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-slate-400" />
-                              {contact.neighborhood || 'N/A'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <div>
-                              <p className="font-medium">{contact.tenant_name}</p>
-                              <p className="text-slate-500 text-xs">{contact.tenant_phone}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-slate-400" />
-                              {contact.tenant_phone}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            <div>
-                              <p className="font-medium">{contact.owner_name}</p>
-                              <p className="text-slate-500 text-xs">{contact.owner_profile?.phone}</p>
+                      {filteredContacts.map((contact) => (
+                        <tr key={contact.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col gap-2">
+                              <span className="text-sm font-bold text-slate-900">
+                                {new Date(contact.contact_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </span>
+                              <span className={`inline-flex w-fit px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md ${contact.status === 'contact_initiated'
+                                ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                                : contact.status === 'reservation_made'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                  : 'bg-green-50 text-green-700 border border-green-100'
+                                }`}>
+                                {contact.status === 'contact_initiated' ? 'Contact initié' :
+                                  contact.status === 'reservation_made' ? 'Réservation faite' :
+                                    'Location confirmée'}
+                              </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${contact.status === 'contact_initiated'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : contact.status === 'reservation_made'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-green-100 text-green-800'
-                              }`}>
-                              {contact.status === 'contact_initiated' ? 'Contact initié' :
-                                contact.status === 'reservation_made' ? 'Réservation effectuée' :
-                                  'Location confirmée'}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <p className="text-sm font-black text-slate-900 group-hover:text-ci-orange-600 transition-colors">
+                                {contact.house_info?.title || 'Bien non trouvé'}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                <MapPin className="w-3 h-3 text-ci-orange-500" />
+                                {contact.neighborhood || contact.house_info?.neighborhood}, {contact.house_info?.city}
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                {contact.property_type === 'residence' ? 'Résidence Meublée' :
+                                 contact.property_type === 'house' ? 'Maison / Villa' :
+                                 contact.property_type === 'land' ? 'Terrain' :
+                                 contact.property_type === 'shop' ? 'Magasin / Local' : contact.property_type}
+                              </span>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold">
+                                {contact.tenant_name?.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <p className="text-sm font-bold text-slate-900">{contact.tenant_name}</p>
+                                <a href={`tel:${contact.tenant_phone}`} className="text-xs text-slate-500 hover:text-ci-orange-600 flex items-center gap-1">
+                                  <Phone className="w-3 h-3" /> {contact.tenant_phone}
+                                </a>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <p className="text-sm font-bold text-slate-700">{contact.owner_name}</p>
+                              <p className="text-xs text-slate-400">{contact.owner_profile?.email || 'Pas d\'email'}</p>
+                              {contact.owner_profile?.phone && (
+                                <a href={`tel:${contact.owner_profile.phone}`} className="text-[10px] font-bold text-slate-500 mt-1 flex items-center gap-1">
+                                  <Phone className="w-3 h-3" /> {contact.owner_profile.phone}
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               {contact.status === 'contact_initiated' && (
                                 <button
                                   onClick={() => updateContactStatus(contact.id, 'reservation_made')}
-                                  className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                                  className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors"
                                 >
-                                  Marquer demande effectuée
+                                  Réservation Faite
                                 </button>
                               )}
                               {contact.status === 'reservation_made' && (
                                 <button
                                   onClick={() => updateContactStatus(contact.id, 'rental_confirmed')}
-                                  className="text-green-600 hover:text-green-800 font-medium text-sm"
+                                  className="px-3 py-1.5 bg-green-50 text-green-600 text-xs font-bold rounded-lg hover:bg-green-100 transition-colors"
                                 >
-                                  Confirmer location
+                                  Confirmer Location
                                 </button>
-                              )}
-                              {contact.status === 'rental_confirmed' && (
-                                <span className="text-green-600 font-medium text-sm">
-                                  <CheckCircle className="w-4 h-4 inline mr-1" />
-                                  Confirmée
-                                </span>
                               )}
                               <button
                                 onClick={() => deleteContact(contact.id)}
-                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors ml-auto"
-                                title="Supprimer le contact"
+                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                title="Supprimer"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1467,10 +1547,13 @@ export const AdminDashboard: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
-                  {propertyContacts.length === 0 && (
-                    <div className="text-center py-12">
-                      <MessageCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-600">Aucun contact enregistré</p>
+                  {filteredContacts.length === 0 && (
+                    <div className="text-center py-20 bg-slate-50/50">
+                      <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-4">
+                        <MessageCircle className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900">Aucun contact trouvé</h3>
+                      <p className="text-slate-500 text-sm">Ajustez votre recherche ou revenez plus tard.</p>
                     </div>
                   )}
                 </div>

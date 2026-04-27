@@ -179,11 +179,14 @@ export interface PropertyContact {
     title: string;
     type: string;
     city: string;
+    neighborhood?: string;
+    price?: number;
   } | null;
   owner_profile?: {
     id: string;
     full_name: string | null;
     phone: string | null;
+    email?: string | null;
   } | null;
 }
 
