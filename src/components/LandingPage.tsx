@@ -162,7 +162,7 @@ export function LandingPage() {
         .select('*')
         .eq('status', 'available')
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(12);
 
       if (error) throw error;
       setHouses(data || []);
@@ -478,7 +478,7 @@ export function LandingPage() {
 
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(12)].map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
                   <div className="h-48 bg-slate-200"></div>
                   <div className="p-6">
