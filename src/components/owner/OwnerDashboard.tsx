@@ -334,30 +334,28 @@ export const OwnerDashboard: React.FC = () => {
       const { error } = await supabase
         .from('houses')
         .delete()
-        .eq('id', houseId)
-        .eq('owner_id', profile?.id);
+        .match({ id: houseId, owner_id: profile?.id });
 
       if (error) {
         console.error('❌ Erreur Supabase lors de la suppression:', error);
         
-        // Code d'erreur 23503 = Violation de clé étrangère (le bien a des réservations ou contacts)
+        // Code d'erreur 23503 = Violation de clé étrangère
         if (error.code === '23503') {
-          if (confirm('Ce bien ne peut pas être supprimé car il possède un historique (réservations ou contacts). Voulez-vous le marquer comme "Indisponible" pour le masquer à la place ?')) {
+          if (confirm('Ce bien ne peut pas être supprimé car il possède un historique. Voulez-vous le marquer comme "Indisponible" à la place ?')) {
             const houseToHide = houses.find(h => h.id === houseId);
             if (houseToHide) await toggleHouseStatus(houseToHide);
           }
         } else {
-          alert(`Erreur lors de la suppression : ${error.message}`);
+          alert(`Erreur : ${error.message}`);
         }
         return;
       }
 
-      console.log('✅ Maison supprimée avec succès');
       alert('Propriété supprimée avec succès');
       await fetchHouses();
     } catch (error: any) {
-      console.error('❌ Erreur critique lors de la suppression:', error);
-      alert('Une erreur inattendue est survenue lors de la suppression.');
+      console.error('❌ Erreur critique:', error);
+      alert('Erreur lors de la suppression.');
     }
   };
 
