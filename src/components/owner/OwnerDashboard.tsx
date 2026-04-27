@@ -308,8 +308,25 @@ export const OwnerDashboard: React.FC = () => {
     }
   };
 
+  const toggleHouseStatus = async (house: House) => {
+    const newStatus = house.status === 'available' ? 'taken' : 'available';
+    try {
+      const { error } = await supabase
+        .from('houses')
+        .update({ status: newStatus })
+        .eq('id', house.id);
+
+      if (error) throw error;
+      
+      // Mettre à jour l'état local
+      setHouses(prev => prev.map(h => h.id === house.id ? { ...h, status: newStatus } : h));
+    } catch (error) {
+      console.error('Erreur lors du changement de statut:', error);
+    }
+  };
+
   const handleDeleteHouse = async (houseId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette maison ?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cette propriété ? Cette action est irréversible.')) return;
 
     try {
       const { error } = await supabase.from('houses').delete().eq('id', houseId);
@@ -1264,27 +1281,47 @@ export const OwnerDashboard: React.FC = () => {
                         {house.price.toLocaleString()} FCFA
                       </span>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setViewingHouse(house)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Voir
-                      </button>
-                      <button
-                        onClick={() => handleEditHouse(house)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition text-sm font-medium"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteHouse(house.id)}
-                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setViewingHouse(house)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-sm font-medium"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Détails
+                        </button>
+                        <button
+                          onClick={() => handleEditHouse(house)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition text-sm font-medium"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Modifier
+                        </button>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleHouseStatus(house)}
+                          className={`flex-[2] flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition text-sm font-bold shadow-sm ${
+                            house.status === 'available'
+                              ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {house.status === 'available' ? (
+                            <><Clock className="w-4 h-4" /> Marquer Indisponible</>
+                          ) : (
+                            <><CheckCircle className="w-4 h-4" /> Marquer Disponible</>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHouse(house.id)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition text-sm font-medium"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
