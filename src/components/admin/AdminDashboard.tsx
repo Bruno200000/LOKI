@@ -1496,7 +1496,13 @@ export const AdminDashboard: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col gap-1">
                               <p className="text-sm font-black text-slate-900 group-hover:text-ci-orange-600 transition-colors">
-                                {contact.house_info?.title || 'Bien non trouvé'}
+                                {contact.house_info?.title || (
+                                  <span className="text-slate-400 italic">
+                                    {contact.property_type === 'land' ? 'Terrain' : 
+                                     contact.property_type === 'house' ? 'Maison' : 
+                                     contact.property_type === 'residence' ? 'Résidence' : 'Bien'} #{contact.house_id}
+                                  </span>
+                                )}
                               </p>
                               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                                 <MapPin className="w-3 h-3 text-ci-orange-500" />
