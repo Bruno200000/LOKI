@@ -360,8 +360,12 @@ export const HouseBrowser: React.FC = () => {
                     return <ImageCarousel images={imagesToShow} title={house.title} onClick={() => handleViewDetails(house)} />;
                   } else {
                     return (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <HomeIcon className="w-12 h-12 text-slate-300" />
+                      <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                        <img 
+                          src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                          alt="LOKI Default" 
+                          className="w-full h-full object-cover opacity-80"
+                        />
                       </div>
                     );
                   }

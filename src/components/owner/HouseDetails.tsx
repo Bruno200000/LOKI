@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { House } from '../../lib/supabase';
-import { ChevronLeft, ChevronRight, Home as HomeIcon, MapPin, Bed, Bath, Thermometer, Wifi, Car, TreePine, Dumbbell, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home as HomeIcon, MapPin, Bed, Bath, Thermometer, Wifi, Car, TreePine, Dumbbell, Shield, FileText, Download, Image as ImageIcon } from 'lucide-react';
 
 interface HouseDetailsProps {
   house: House;
@@ -96,8 +96,12 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                   )}
                 </>
               ) : (
-                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                  <HomeIcon className="w-16 h-16 text-slate-300" />
+                <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                  <img 
+                    src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                    alt="LOKI Default" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
             </div>
@@ -187,6 +191,43 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                 {house.description}
               </p>
             </div>
+
+            {/* Documents & Annexes */}
+            {house.description_documents && house.description_documents.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tight flex items-center gap-2">
+                  <div className="w-1 h-6 bg-ci-orange-500 rounded-full" />
+                  Documents & Annexes
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {house.description_documents.map((doc, idx) => (
+                    <a
+                      key={idx}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-ci-orange-50 rounded-2xl border border-slate-100 hover:border-ci-orange-200 transition-all group"
+                    >
+                      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {doc.type === 'image' ? (
+                          <ImageIcon className="w-6 h-6 text-ci-orange-500" />
+                        ) : (
+                          <FileText className="w-6 h-6 text-blue-500" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 truncate group-hover:text-ci-orange-600 transition-colors">
+                          {doc.name}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">
+                          Consulter <Download className="w-3 h-3" />
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Photos de la propriété */}
             {house.photos && house.photos.length > 0 && (

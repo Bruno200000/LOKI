@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { House, supabase } from '../../lib/supabase';
-import { X, MapPin, Bed, Bath, Home as HomeIcon, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, ChevronLeft, Phone } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Home as HomeIcon, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, ChevronLeft, Phone, FileText, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ContactModal } from './ContactModal';
 
@@ -110,7 +110,13 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-12 h-12 text-slate-200" /></div>
+                  <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                    <img 
+                      src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                      alt="LOKI Default" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
 
                 <button onClick={onClose} className="hidden sm:flex absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-lg text-slate-900 active:scale-95 transition"><X className="w-5 h-5" /></button>
@@ -171,6 +177,43 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                   <Eye className="w-4 h-4" />
                   <span className="text-xs font-bold uppercase tracking-tight">{viewersCount} personnes regardent ce bien actuellement</span>
                 </div>
+
+                {/* Documents & Annexes */}
+                {house.description_documents && house.description_documents.length > 0 && (
+                  <div className="mb-10">
+                    <h3 className="text-lg font-black text-slate-900 mb-6 uppercase tracking-tight flex items-center gap-2">
+                      <div className="w-1 h-6 bg-ci-orange-500 rounded-full" />
+                      Documents & Annexes
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {house.description_documents.map((doc, idx) => (
+                        <a
+                          key={idx}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-ci-orange-50 rounded-2xl border border-slate-100 hover:border-ci-orange-200 transition-all group"
+                        >
+                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                            {doc.type === 'image' ? (
+                              <ImageIcon className="w-6 h-6 text-ci-orange-500" />
+                            ) : (
+                              <FileText className="w-6 h-6 text-blue-500" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate group-hover:text-ci-orange-600 transition-colors">
+                              {doc.name}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">
+                              Consulter le document <Download className="w-3 h-3" />
+                            </p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

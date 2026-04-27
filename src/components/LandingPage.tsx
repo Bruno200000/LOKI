@@ -555,9 +555,12 @@ export function LandingPage() {
                         );
                       } else {
                         return (
-                          <div className="flex flex-col items-center justify-center h-full text-slate-300">
-                            <Home className="h-10 w-10 mb-2" />
-                            <span className="text-xs font-medium uppercase tracking-wider">Sans image</span>
+                          <div className="flex flex-col items-center justify-center h-full bg-slate-50">
+                            <img 
+                              src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                              alt="LOKI Default" 
+                              className="w-full h-full object-cover opacity-80"
+                            />
                           </div>
                         );
                       }
@@ -806,7 +809,11 @@ export function LandingPage() {
                               );
                             } else {
                               return (
-                                <Home className="h-8 w-8 text-slate-300" />
+                                <img 
+                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                                  alt="LOKI Default" 
+                                  className="w-full h-full object-cover opacity-60"
+                                />
                               );
                             }
                           })()}

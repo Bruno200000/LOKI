@@ -478,7 +478,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
         area_sqm: parsedArea,
 
         // Médias
-        image_url: formData.image_url || null,
+        image_url: formData.image_url || (formData.photos.length === 0 ? (propertyType === 'land' ? '/images/default-land.png' : '/images/default-property.png') : null),
         video_url: formData.video_url || null,
         virtual_tour_url: formData.virtual_tour_url || null,
         photos: formData.photos.length > 0 ? formData.photos : null,
