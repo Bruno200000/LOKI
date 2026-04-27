@@ -329,13 +329,35 @@ export const OwnerDashboard: React.FC = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cette propriété ? Cette action est irréversible.')) return;
 
     try {
-      const { error } = await supabase.from('houses').delete().eq('id', houseId);
+      console.log('🗑️ Tentative de suppression de la maison:', houseId);
+      
+      const { error } = await supabase
+        .from('houses')
+        .delete()
+        .eq('id', houseId)
+        .eq('owner_id', profile?.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erreur Supabase lors de la suppression:', error);
+        
+        // Code d'erreur 23503 = Violation de clé étrangère (le bien a des réservations ou contacts)
+        if (error.code === '23503') {
+          if (confirm('Ce bien ne peut pas être supprimé car il possède un historique (réservations ou contacts). Voulez-vous le marquer comme "Indisponible" pour le masquer à la place ?')) {
+            const houseToHide = houses.find(h => h.id === houseId);
+            if (houseToHide) await toggleHouseStatus(houseToHide);
+          }
+        } else {
+          alert(`Erreur lors de la suppression : ${error.message}`);
+        }
+        return;
+      }
+
+      console.log('✅ Maison supprimée avec succès');
+      alert('Propriété supprimée avec succès');
       await fetchHouses();
-    } catch (error) {
-      console.error('Error deleting house:', error);
-      alert('Erreur lors de la suppression');
+    } catch (error: any) {
+      console.error('❌ Erreur critique lors de la suppression:', error);
+      alert('Une erreur inattendue est survenue lors de la suppression.');
     }
   };
 
