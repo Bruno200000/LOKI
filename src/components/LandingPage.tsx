@@ -516,7 +516,7 @@ export function LandingPage() {
                         return null;
                       };
                       const getImageSrc = () => {
-                        if (house.image_url) return house.image_url;
+                        if (house.image_url && !house.image_url.includes('default-')) return house.image_url;
                         if (house.photos && house.photos.length > 0) return house.photos[0];
                         return null;
                       };
@@ -802,7 +802,7 @@ export function LandingPage() {
                         <div className="w-20 h-20 bg-slate-100 rounded-xl mr-4 flex items-center justify-center overflow-hidden">
                           {(() => {
                             const getImageSrc = () => {
-                              if (house.image_url) return house.image_url;
+                              if (house.image_url && !house.image_url.includes('default-')) return house.image_url;
                               if (house.photos && house.photos.length > 0) return house.photos[0];
                               return null;
                             };
