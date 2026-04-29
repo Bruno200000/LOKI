@@ -823,7 +823,12 @@ export function LandingPage() {
                             } else {
                               return (
                                 <img
-                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"}
+                                  src={
+                                    house.type?.toLowerCase() === 'land' ? "/images/default-land.png" :
+                                    house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                                    house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
+                                    "/images/default-property.png"
+                                  }
                                   alt="LOKI Default"
                                   className="w-full h-full object-cover opacity-60"
                                 />
