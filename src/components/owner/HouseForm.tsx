@@ -12,6 +12,7 @@ const BOUAKE_NEIGHBORHOODS = [
   "Konankankro", "Liberté", "Lycée Municipal", "Mamianou", "N'Dakro",
   "N'Gattakro", "N'Gouatanoukro", "Niankoukro", "Nimbo", "Sokoura",
   "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle",
+  "Corridor sud", "Quartier milionnaire", "Béoumi", "Marcory", "Petit paris",
 ];
 
 const ABIDJAN_NEIGHBORHOODS = [

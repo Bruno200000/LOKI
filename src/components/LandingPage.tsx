@@ -62,7 +62,7 @@ export function LandingPage() {
   const [searchNeighborhood, setSearchNeighborhood] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
-  
+
   const localityText = useTypewriter(["Ville, Quartier...", "Abidjan, Cocody...", "Bouaké, Nimbo...", "Yamoussoukro..."], 0);
   const roomsText = useTypewriter(["2, 3, 4+ Chambres...", "1 Chambre...", "3 pièces...", "Studio..."], 1000);
   const budgetText = useTypewriter(["500,000 FCFA...", "150,000 FCFA...", "1,000,000 FCFA...", "300,000 FCFA..."], 2000);
@@ -85,7 +85,8 @@ export function LandingPage() {
       "IDESSA", "Kamounoukro", "Kanakro", "Kennedy", "Koko", "Kodiakoffikro",
       "Konankankro", "Liberté", "Lycée Municipal", "Mamianou", "N'Dakro",
       "N'Gattakro", "N'Gouatanoukro", "Niankoukro", "Nimbo", "Sokoura",
-      "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle"
+      "Tièrèkro", "Tolla Kouadiokro", "Zone Industrielle",
+      "Corridor sud", "Quartier milionnaire", "Béoumi", "Marcory", "Petit paris"
     ]
   };
 
@@ -197,7 +198,7 @@ export function LandingPage() {
           <div className="absolute top-20 left-10 w-96 h-96 bg-ci-orange-100 rounded-full blur-[100px] opacity-60"></div>
           <div className="absolute top-40 right-20 w-[30rem] h-[30rem] bg-ci-green-100 rounded-full blur-[100px] opacity-40"></div>
         </div>
-        
+
         <div className="max-w-5xl mx-auto relative z-10 text-center pt-8 lg:pt-16">
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-800 mb-6 leading-[1.1] tracking-tight animate-slide-up">
             Arrêtez de perdre des <br /> heures.
@@ -208,7 +209,7 @@ export function LandingPage() {
           <p className="text-lg sm:text-xl text-slate-500 mb-10 max-w-2xl mx-auto font-medium animate-slide-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
             Des milliers de biens mis en location à votre disposition. Créer un compte pour plus de fonctionnalités exclusives.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
             <button
               onClick={handleGetStarted}
@@ -267,13 +268,13 @@ export function LandingPage() {
                 </div>
                 <div className="hidden sm:block w-px h-16 bg-slate-200"></div>
                 <div className="flex-[2] w-full group/field">
-                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 text-left">Commodités & Options</label>
-                   <div className="flex items-center gap-2 flex-wrap">
-                      <span className="cursor-pointer px-4 py-2 bg-slate-100 hover:bg-ci-orange-100 hover:border-ci-orange-300 hover:text-ci-orange-700 border border-slate-200 rounded-full text-xs font-semibold text-slate-600 transition-all transform hover:scale-105">Piscine</span>
-                      <span className="cursor-pointer px-4 py-2 bg-ci-green-100 text-ci-green-700 border border-ci-green-200 rounded-full text-xs font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-1">Climatisé <CheckCircle className="w-3 h-3" /></span>
-                      <span className="cursor-pointer px-4 py-2 bg-slate-100 hover:bg-ci-orange-100 hover:border-ci-orange-300 hover:text-ci-orange-700 border border-slate-200 rounded-full text-xs font-semibold text-slate-600 transition-all transform hover:scale-105">Parking</span>
-                      <span className="cursor-pointer px-4 py-2 bg-white border border-slate-300 rounded-full text-xs font-semibold text-slate-500 border-dashed hover:border-solid hover:bg-slate-50 hover:text-slate-700 transition-all">+ Ajouter</span>
-                   </div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 text-left">Commodités & Options</label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="cursor-pointer px-4 py-2 bg-slate-100 hover:bg-ci-orange-100 hover:border-ci-orange-300 hover:text-ci-orange-700 border border-slate-200 rounded-full text-xs font-semibold text-slate-600 transition-all transform hover:scale-105">Piscine</span>
+                    <span className="cursor-pointer px-4 py-2 bg-ci-green-100 text-ci-green-700 border border-ci-green-200 rounded-full text-xs font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-1">Climatisé <CheckCircle className="w-3 h-3" /></span>
+                    <span className="cursor-pointer px-4 py-2 bg-slate-100 hover:bg-ci-orange-100 hover:border-ci-orange-300 hover:text-ci-orange-700 border border-slate-200 rounded-full text-xs font-semibold text-slate-600 transition-all transform hover:scale-105">Parking</span>
+                    <span className="cursor-pointer px-4 py-2 bg-white border border-slate-300 rounded-full text-xs font-semibold text-slate-500 border-dashed hover:border-solid hover:bg-slate-50 hover:text-slate-700 transition-all">+ Ajouter</span>
+                  </div>
                 </div>
               </div>
 
@@ -556,14 +557,14 @@ export function LandingPage() {
                       } else {
                         return (
                           <div className="relative w-full h-full overflow-hidden">
-                            <img 
+                            <img
                               src={
-                                house.type?.toLowerCase() === 'land' ? "/images/default-land.png" : 
-                                house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
-                                house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
-                                "/images/default-property.png"
-                              } 
-                              alt="LOKI Default" 
+                                house.type?.toLowerCase() === 'land' ? "/images/default-land.png" :
+                                  house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                                    house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
+                                      "/images/default-property.png"
+                              }
+                              alt="LOKI Default"
                               className="w-full h-full object-cover opacity-80"
                             />
                             {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
@@ -821,9 +822,9 @@ export function LandingPage() {
                               );
                             } else {
                               return (
-                                <img 
-                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
-                                  alt="LOKI Default" 
+                                <img
+                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"}
+                                  alt="LOKI Default"
                                   className="w-full h-full object-cover opacity-60"
                                 />
                               );
@@ -927,7 +928,7 @@ export function LandingPage() {
               <span className="text-6xl font-black text-slate-800 tracking-tighter">0</span>
               <span className="text-slate-400 font-medium">FCFA / RECHERCHE</span>
             </div>
-            
+
             <ul className="space-y-4 mb-10 flex-1 text-left">
               <li className="flex items-center text-slate-600 text-sm">
                 <CheckCircle className="h-5 w-5 text-ci-green-500 mr-3 flex-shrink-0" />
@@ -964,7 +965,7 @@ export function LandingPage() {
               <span className="text-6xl font-black text-white tracking-tighter">5</span>
               <span className="text-orange-200 font-medium">% / TRANSACTION</span>
             </div>
-            
+
             <ul className="space-y-4 mb-10 flex-1 text-left">
               <li className="flex items-center text-white text-sm">
                 <CheckCircle className="h-5 w-5 text-yellow-400 mr-3 flex-shrink-0" />
@@ -997,7 +998,7 @@ export function LandingPage() {
             <div className="flex justify-center mb-8 h-[72px] items-center">
               <span className="text-4xl font-black text-slate-800 tracking-tighter uppercase border-b-4 border-slate-200 pb-2">Sur devis</span>
             </div>
-            
+
             <ul className="space-y-4 mb-10 flex-1 text-left">
               <li className="flex items-center text-slate-600 text-sm">
                 <CheckCircle className="h-5 w-5 text-ci-green-500 mr-3 flex-shrink-0" />
@@ -1030,7 +1031,7 @@ export function LandingPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden" id="cleaning-service">
         <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-blue-100/50 blur-[100px] rounded-full pointer-events-none -z-10"></div>
         <div className="absolute bottom-0 left-0 w-[40rem] h-[40rem] bg-green-100/40 blur-[100px] rounded-full pointer-events-none -z-10"></div>
-        
+
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
           <div className="lg:w-1/2">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-black text-xs uppercase tracking-widest mb-6 border border-blue-100 shadow-sm">
@@ -1042,7 +1043,7 @@ export function LandingPage() {
             <p className="text-xl text-slate-600 mb-8 font-medium">
               Votre satisfaction, notre mission ! Pour un espace propre et sain, faites appel à notre expertise en nettoyage.
             </p>
-            
+
             <div className="grid sm:grid-cols-2 gap-4 mb-10">
               {[
                 "Nettoyage de maison",
@@ -1104,32 +1105,32 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="lg:w-1/2 w-full max-w-lg relative">
-             <div className="absolute inset-0 bg-blue-600 rounded-[3rem] transform rotate-3 scale-105 opacity-10 blur-xl"></div>
-             <div className="bg-gradient-to-br from-blue-500 to-green-400 p-1.5 rounded-[3rem] shadow-2xl relative z-10 transform -rotate-1 hover:rotate-0 transition-transform duration-500">
-               <div className="bg-white rounded-[2.8rem] p-8 sm:p-12 h-full flex flex-col justify-between">
-                 <div className="text-center mb-8">
-                   <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-blue-100">
-                     <Sparkles className="w-12 h-12 text-blue-600" />
-                   </div>
-                   <h3 className="text-3xl font-black text-slate-800 mb-2">Service Premium</h3>
-                   <div className="w-16 h-1.5 bg-gradient-to-r from-blue-500 to-green-400 mx-auto rounded-full"></div>
-                 </div>
-                 
-                 <div className="space-y-8 flex-1 flex flex-col justify-center">
-                    <p className="text-center text-slate-600 text-lg font-medium italic">"L'expertise du nettoyage professionnel dans toutes les dimensions de votre maison et entreprise."</p>
-                    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100 relative overflow-hidden group">
-                       <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-green-50 opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                       <p className="text-xs text-slate-500 mb-2 uppercase font-black tracking-widest relative z-10">Retrouvez-nous sur les réseaux</p>
-                       <div className="flex items-center gap-4 relative z-10">
-                          <div className="p-3 bg-white rounded-full shadow-sm text-slate-800 border border-slate-100"><Instagram className="w-6 h-6" /></div>
-                          <div className="font-bold text-slate-800">@cleanservicebouake</div>
-                       </div>
+            <div className="absolute inset-0 bg-blue-600 rounded-[3rem] transform rotate-3 scale-105 opacity-10 blur-xl"></div>
+            <div className="bg-gradient-to-br from-blue-500 to-green-400 p-1.5 rounded-[3rem] shadow-2xl relative z-10 transform -rotate-1 hover:rotate-0 transition-transform duration-500">
+              <div className="bg-white rounded-[2.8rem] p-8 sm:p-12 h-full flex flex-col justify-between">
+                <div className="text-center mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-blue-100">
+                    <Sparkles className="w-12 h-12 text-blue-600" />
+                  </div>
+                  <h3 className="text-3xl font-black text-slate-800 mb-2">Service Premium</h3>
+                  <div className="w-16 h-1.5 bg-gradient-to-r from-blue-500 to-green-400 mx-auto rounded-full"></div>
+                </div>
+
+                <div className="space-y-8 flex-1 flex flex-col justify-center">
+                  <p className="text-center text-slate-600 text-lg font-medium italic">"L'expertise du nettoyage professionnel dans toutes les dimensions de votre maison et entreprise."</p>
+                  <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-green-50 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                    <p className="text-xs text-slate-500 mb-2 uppercase font-black tracking-widest relative z-10">Retrouvez-nous sur les réseaux</p>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="p-3 bg-white rounded-full shadow-sm text-slate-800 border border-slate-100"><Instagram className="w-6 h-6" /></div>
+                      <div className="font-bold text-slate-800">@cleanservicebouake</div>
                     </div>
-                 </div>
-               </div>
-             </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
