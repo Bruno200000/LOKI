@@ -555,12 +555,24 @@ export function LandingPage() {
                         );
                       } else {
                         return (
-                          <div className="flex flex-col items-center justify-center h-full bg-slate-50">
+                          <div className="relative w-full h-full overflow-hidden">
                             <img 
-                              src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                              src={
+                                house.type === 'land' ? "/images/default-land.png" : 
+                                house.type === 'residence' ? "/images/default-residence.png" :
+                                house.type === 'shop' ? "/images/default-shop.png" :
+                                "/images/default-property.png"
+                              } 
                               alt="LOKI Default" 
                               className="w-full h-full object-cover opacity-80"
                             />
+                            {(house.type === 'residence' || house.type === 'shop') && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
+                                <span className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-widest">
+                                  {house.type === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         );
                       }

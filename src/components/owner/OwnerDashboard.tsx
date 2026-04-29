@@ -1261,12 +1261,24 @@ export const OwnerDashboard: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                      <div className="w-full h-full relative overflow-hidden">
                         <img 
-                          src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                          src={
+                            house.type === 'land' ? "/images/default-land.png" : 
+                            house.type === 'residence' ? "/images/default-residence.png" :
+                            house.type === 'shop' ? "/images/default-shop.png" :
+                            "/images/default-property.png"
+                          } 
                           alt="LOKI Default" 
                           className="w-full h-full object-cover opacity-60"
                         />
+                        {(house.type === 'residence' || house.type === 'shop') && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                            <span className="bg-white/90 backdrop-blur-md px-2 py-1 rounded text-[8px] font-black text-slate-900 shadow-lg border border-white/20 uppercase tracking-widest">
+                              {house.type === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="absolute top-3 right-3">

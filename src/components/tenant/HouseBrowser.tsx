@@ -360,12 +360,24 @@ export const HouseBrowser: React.FC = () => {
                     return <ImageCarousel images={imagesToShow} title={house.title} onClick={() => handleViewDetails(house)} />;
                   } else {
                     return (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                      <div className="w-full h-full relative overflow-hidden">
                         <img 
-                          src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                          src={
+                            house.type === 'land' ? "/images/default-land.png" : 
+                            house.type === 'residence' ? "/images/default-residence.png" :
+                            house.type === 'shop' ? "/images/default-shop.png" :
+                            "/images/default-property.png"
+                          } 
                           alt="LOKI Default" 
                           className="w-full h-full object-cover opacity-80"
                         />
+                        {(house.type === 'residence' || house.type === 'shop') && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
+                            <span className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-widest">
+                              {house.type === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   }

@@ -1340,8 +1340,24 @@ export const AdminDashboard: React.FC = () => {
                                     className="w-12 h-12 rounded-lg object-cover border border-slate-200"
                                   />
                                 ) : (
-                                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-                                    <Home className="w-6 h-6 text-slate-400" />
+                                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden relative">
+                                    <img 
+                                      src={
+                                        house.type === 'land' ? "/images/default-land.png" : 
+                                        house.type === 'residence' ? "/images/default-residence.png" :
+                                        house.type === 'shop' ? "/images/default-shop.png" :
+                                        "/images/default-property.png"
+                                      } 
+                                      alt="LOKI Default" 
+                                      className="w-full h-full object-cover opacity-60"
+                                    />
+                                    {(house.type === 'residence' || house.type === 'shop') && (
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                                        <span className="bg-white/90 backdrop-blur-md px-1 py-0.5 rounded-[2px] text-[4px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-[0.05em] text-center leading-tight">
+                                          {house.type === 'residence' ? 'Résidence\nà louer' : 'Magasin\nà louer'}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 <div>
