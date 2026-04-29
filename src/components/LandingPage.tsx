@@ -570,8 +570,8 @@ export function LandingPage() {
                               className="w-full h-full object-cover opacity-80"
                             />
                             {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
-                                <span className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-widest">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/5 transition-colors group-hover:bg-black/20">
+                                <span className="bg-white/95 backdrop-blur-xl px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black text-slate-900 shadow-[0_0_30px_rgba(255,255,255,0.5)] border border-white/50 uppercase tracking-[0.2em] animate-pulse transform group-hover:scale-110 transition-transform duration-500">
                                   {house.type?.toLowerCase() === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
                                 </span>
                               </div>
@@ -826,11 +826,25 @@ export function LandingPage() {
                               );
                             } else {
                               return (
-                                <img
-                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"}
-                                  alt="LOKI Default"
-                                  className="w-full h-full object-cover opacity-60"
-                                />
+                                <div className="relative w-full h-full overflow-hidden">
+                                  <img
+                                    src={
+                                      house.type?.toLowerCase() === 'land' ? "/images/default-land.png" :
+                                      house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                                      house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
+                                      "/images/default-property.png"
+                                    }
+                                    alt="LOKI Default"
+                                    className="w-full h-full object-cover opacity-60"
+                                  />
+                                  {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                                      <span className="bg-white/95 backdrop-blur-md px-2 py-1 rounded-lg text-[6px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-widest animate-pulse">
+                                        {house.type?.toLowerCase() === 'residence' ? 'Résidence' : 'Magasin'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               );
                             }
                           })()}
