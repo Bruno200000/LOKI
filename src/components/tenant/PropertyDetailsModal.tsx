@@ -110,12 +110,24 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                  <div className="w-full h-full flex items-center justify-center bg-slate-50 relative overflow-hidden">
                     <img 
-                      src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"} 
+                      src={
+                        house.type?.toLowerCase() === 'land' ? "/images/default-land.png" : 
+                        house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                        house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
+                        "/images/default-property.png"
+                      } 
                       alt="LOKI Default" 
                       className="w-full h-full object-cover"
                     />
+                    {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                        <span className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl text-lg font-black text-slate-900 shadow-2xl border border-white/20 uppercase tracking-[0.1em]">
+                          {house.type?.toLowerCase() === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 

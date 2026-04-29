@@ -99,18 +99,18 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
                 <div className="w-full h-full bg-slate-50 flex items-center justify-center relative overflow-hidden">
                   <img 
                     src={
-                      house.type === 'land' ? "/images/default-land.png" : 
-                      house.type === 'residence' ? "/images/default-residence.png" :
-                      house.type === 'shop' ? "/images/default-shop.png" :
+                      house.type?.toLowerCase() === 'land' ? "/images/default-land.png" : 
+                      house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                      house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
                       "/images/default-property.png"
                     } 
                     alt="LOKI Default" 
                     className="w-full h-full object-cover"
                   />
-                  {(house.type === 'residence' || house.type === 'shop') && (
+                  {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                       <span className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl text-lg font-black text-slate-900 shadow-2xl border border-white/20 uppercase tracking-[0.1em]">
-                        {house.type === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                        {house.type?.toLowerCase() === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
                       </span>
                     </div>
                   )}

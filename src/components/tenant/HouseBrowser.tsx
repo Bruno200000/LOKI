@@ -363,18 +363,18 @@ export const HouseBrowser: React.FC = () => {
                       <div className="w-full h-full relative overflow-hidden">
                         <img 
                           src={
-                            house.type === 'land' ? "/images/default-land.png" : 
-                            house.type === 'residence' ? "/images/default-residence.png" :
-                            house.type === 'shop' ? "/images/default-shop.png" :
+                            house.type?.toLowerCase() === 'land' ? "/images/default-land.png" : 
+                            house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
+                            house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
                             "/images/default-property.png"
                           } 
                           alt="LOKI Default" 
                           className="w-full h-full object-cover opacity-80"
                         />
-                        {(house.type === 'residence' || house.type === 'shop') && (
+                        {(house.type?.toLowerCase() === 'residence' || house.type?.toLowerCase() === 'shop') && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
                             <span className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-900 shadow-xl border border-white/20 uppercase tracking-widest">
-                              {house.type === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
+                              {house.type?.toLowerCase() === 'residence' ? 'Résidence à louer' : 'Magasin à louer'}
                             </span>
                           </div>
                         )}
