@@ -78,7 +78,7 @@ export function LandingPage() {
       "Yopougon - Maroc", "Yopougon - Niangon", "Yopougon - Selmer",
     ],
     'Bouaké': [
-      "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
+      "quartier bouaké", "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
       "Allokokro", "Attienkro", "Beaufort", "Belleville 1", "Belleville 2",
       "Broukro 1", "Broukro 2", "Camp Militaire", "Commerce", "Dar-es-Salam 1",
       "Dar-es-Salam 2", "Dar-es-Salam 3", "Dougouba", "Gonfreville", "Houphouët-Ville",
@@ -823,12 +823,7 @@ export function LandingPage() {
                             } else {
                               return (
                                 <img
-                                  src={
-                                    house.type?.toLowerCase() === 'land' ? "/images/default-land.png" :
-                                    house.type?.toLowerCase() === 'residence' ? "/images/default-residence.png" :
-                                    house.type?.toLowerCase() === 'shop' ? "/images/default-shop.png" :
-                                    "/images/default-property.png"
-                                  }
+                                  src={house.type === 'land' ? "/images/default-land.png" : "/images/default-property.png"}
                                   alt="LOKI Default"
                                   className="w-full h-full object-cover opacity-60"
                                 />

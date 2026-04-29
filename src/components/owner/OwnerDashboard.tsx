@@ -1254,7 +1254,7 @@ export const OwnerDashboard: React.FC = () => {
                         controls
                         className="w-full h-full object-cover"
                       />
-                    ) : house.image_url ? (
+                    ) : (house.image_url && !house.image_url.includes('default-')) ? (
                       <img
                         src={house.image_url}
                         alt={house.title}

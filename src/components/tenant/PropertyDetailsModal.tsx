@@ -17,7 +17,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
   const [ownerInfo, setOwnerInfo] = useState<{ name: string; phone: string } | null>(null);
 
   const allImages = [
-    ...(house.image_url ? [house.image_url] : []),
+    ...(house.image_url && !house.image_url.includes('default-') ? [house.image_url] : []),
     ...(house.photos || [])
   ];
 

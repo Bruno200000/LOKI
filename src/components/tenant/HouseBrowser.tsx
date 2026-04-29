@@ -342,7 +342,7 @@ export const HouseBrowser: React.FC = () => {
                   const mainVideo = (videosToShow && videosToShow.length > 0) ? videosToShow[0] : null;
 
                   const imagesToShow = [
-                    ...(house.image_url ? [house.image_url] : []),
+                    ...(house.image_url && !house.image_url.includes('default-') ? [house.image_url] : []),
                     ...(house.photos || [])
                   ];
 

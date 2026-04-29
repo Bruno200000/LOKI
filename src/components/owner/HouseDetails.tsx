@@ -12,7 +12,7 @@ export const HouseDetails: React.FC<HouseDetailsProps> = ({ house, onClose }) =>
   const touchStartX = useRef<number | null>(null);
 
   const allImages = [
-    ...(house.image_url ? [house.image_url] : []),
+    ...(house.image_url && !house.image_url.includes('default-') ? [house.image_url] : []),
     ...(house.photos || [])
   ];
 
