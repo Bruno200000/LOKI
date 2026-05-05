@@ -193,7 +193,7 @@ export function LandingPage() {
         .select('*')
         .eq('status', 'available')
         .order('created_at', { ascending: false })
-        .limit(12);
+        .limit(18);
 
       if (error) throw error;
       setHouses(data || []);
