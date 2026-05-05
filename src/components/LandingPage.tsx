@@ -435,8 +435,8 @@ export function LandingPage() {
                 >
                   <option value="all">Tous les types</option>
                   <option value="house">Locations</option>
-                  <option value="residence">Meublés</option>
-                  <option value="land">Ventes</option>
+                  <option value="residence">Résidences</option>
+                  <option value="land">Terrains</option>
                   <option value="shop">Magasins</option>
                 </select>
               </div>

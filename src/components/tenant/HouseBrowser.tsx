@@ -249,9 +249,9 @@ export const HouseBrowser: React.FC = () => {
               className="px-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-medium whitespace-nowrap focus:ring-2 focus:ring-ci-orange-500 outline-none shadow-sm transition-all flex-shrink-0"
             >
               <option value="all">Tout type</option>
-              <option value="residence">Meublé</option>
+              <option value="residence">Résidence</option>
               <option value="house">Location</option>
-              <option value="land">Vente</option>
+              <option value="land">Terrain</option>
               <option value="shop">Commerce</option>
             </select>
 
