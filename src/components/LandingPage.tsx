@@ -1,6 +1,7 @@
 import { Home, Search, Shield, Users, TrendingUp, ArrowRight, CheckCircle, Building2, MapPin, Clock, MessageSquare, Facebook, Twitter, Instagram, Linkedin, Bed, Bath, Star, X, Sparkles, Phone, Mail, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase, House } from '../lib/supabase';
+import { slugify } from '../lib/utils';
 
 function useTypewriter(phrases: string[], startDelay: number = 0) {
   const [text, setText] = useState('');
@@ -528,10 +529,10 @@ export function LandingPage() {
               {filteredHouses.map((house, index) => (
                 <a
                   key={house.id}
-                  href={`/property/${house.id}`}
+                  href={`/property/${slugify(house.title)}-${house.id}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.href = `/property/${house.id}`;
+                    window.location.href = `/property/${slugify(house.title)}-${house.id}`;
                   }}
                   className="property-card block bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
                   style={{ animationDelay: `${index * 0.1}s` }}

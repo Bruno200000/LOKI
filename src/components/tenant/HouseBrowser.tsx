@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, House } from '../../lib/supabase';
+import { slugify } from '../../lib/utils';
 import { Search, Home as HomeIcon, MapPin, Bed, Bath, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PropertyDetailsModal } from './PropertyDetailsModal';
 
@@ -450,15 +451,17 @@ export const HouseBrowser: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
+                  <a
+                    href={`/property/${slugify(house.title)}-${house.id}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleViewDetails(house);
+                      e.preventDefault();
+                      window.location.href = `/property/${slugify(house.title)}-${house.id}`;
                     }}
-                    className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold tracking-tight shadow-lg shadow-slate-200 transition-all active:scale-[0.98]"
+                    className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold tracking-tight shadow-lg shadow-slate-200 transition-all active:scale-[0.98] text-center"
                   >
                     Voir les détails
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>

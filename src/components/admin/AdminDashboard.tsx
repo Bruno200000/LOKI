@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, PropertyContact, House } from '../../lib/supabase';
+import { slugify } from '../../lib/utils';
 import { Home, Users, DollarSign, Calendar, LogOut, BarChart3, Phone, MessageCircle, MapPin, User, CheckCircle, Star, Trash2, Eye, Search } from 'lucide-react';
 
 interface Stats {
@@ -1428,7 +1429,7 @@ export const AdminDashboard: React.FC = () => {
                                   <Star className={`w-4 h-4 ${house.featured ? 'fill-current' : ''}`} />
                                 </button>
                                 <button
-                                  onClick={() => window.open(`/?view=house&id=${house.id}`, '_blank')}
+                                  onClick={() => window.open(`/property/${slugify(house.title)}-${house.id}`, '_blank')}
                                   className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                                   title="Voir la maison"
                                 >

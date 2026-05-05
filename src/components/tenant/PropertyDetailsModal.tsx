@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { House, supabase } from '../../lib/supabase';
+import { slugify } from '../../lib/utils';
 import { X, MapPin, Bed, Bath, Home as HomeIcon, Eye, Image as ImageIcon, Car, TreePine, Dumbbell, Shield, Wifi, Thermometer, ChevronLeft, Phone, FileText, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ContactModal } from './ContactModal';
@@ -73,7 +74,7 @@ export const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({ hous
       window.location.href = '/?login=true';
       return;
     }
-    window.location.href = `/booking/${house.id}`;
+    window.location.href = `/booking/${slugify(house.title)}-${house.id}`;
   };
 
   const isResidence = house.type === 'residence';

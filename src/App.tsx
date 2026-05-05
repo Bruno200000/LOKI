@@ -193,14 +193,16 @@ function AppContent() {
   }
 
   // Handle property details page
-  const propertyMatch = currentPath.match(/^\/property\/([a-zA-Z0-9-]+)$/);
+  // Support both /property/UUID and /property/slug-UUID
+  const propertyMatch = currentPath.match(/^\/property\/(?:.*-)?([a-f0-9-]{36})$/i);
   if (propertyMatch) {
     const propertyId = propertyMatch[1];
     return <PropertyDetailsPage propertyId={propertyId} />;
   }
 
   // Handle booking form page
-  const bookingMatch = currentPath.match(/^\/booking\/([a-zA-Z0-9-]+)$/);
+  // Support both /booking/UUID and /booking/slug-UUID
+  const bookingMatch = currentPath.match(/^\/booking\/(?:.*-)?([a-f0-9-]{36})$/i);
   if (bookingMatch) {
     const houseId = bookingMatch[1];
     return <BookingFormPage houseId={houseId} />;
