@@ -143,6 +143,36 @@ export function LandingPage() {
     }
   }, [searchCity, houses]);
 
+  // Auto-play videos on scroll for mobile/touch devices
+  useEffect(() => {
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isTouch) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute('data-house-id');
+          if (entry.isIntersecting && id) {
+            setHoveredCard(Number(id));
+          } else if (!entry.isIntersecting && id) {
+            setHoveredCard((prev) => (prev === Number(id) ? null : prev));
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+
+    const timeoutId = setTimeout(() => {
+      const cards = document.querySelectorAll('.property-card');
+      cards.forEach((card) => observer.observe(card));
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [filteredHouses]);
+
   const getPriceDisplay = (house: House) => {
     switch (house.type) {
       case 'residence':
@@ -503,8 +533,9 @@ export function LandingPage() {
                     e.preventDefault();
                     window.location.href = `/property/${house.id}`;
                   }}
-                  className="block bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
+                  className="property-card block bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
                   style={{ animationDelay: `${index * 0.1}s` }}
+                  data-house-id={house.id}
                   onMouseEnter={() => setHoveredCard(house.id)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
