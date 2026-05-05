@@ -526,9 +526,8 @@ export function LandingPage() {
                       const videoSrc = getVideoSrc();
                       const imageSrc = getImageSrc();
                       const isHovered = hoveredCard === house.id;
-                      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-                      if (isHovered && videoSrc && !isTouch) {
+                      if (isHovered && videoSrc) {
                         return (
                           <video
                             src={videoSrc}
@@ -603,7 +602,9 @@ export function LandingPage() {
                     </h3>
                     <div className="flex items-center text-slate-500 text-sm mb-4">
                       <MapPin className="h-4 w-4 mr-1 text-slate-400" />
-                      <span className="truncate">{house.location}, {house.city}</span>
+                      <span className="truncate">
+                        {[...new Set([house.neighborhood, house.location, house.city].filter(Boolean))].join(', ')}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100 text-slate-600 text-sm font-medium">
@@ -861,7 +862,9 @@ export function LandingPage() {
                           </h4>
                           <p className="text-sm text-slate-500 mb-2 flex items-center">
                             <MapPin className="h-3 w-3 inline mr-1 flex-shrink-0 text-slate-400" />
-                            <span className="truncate">{house.location}, {house.city}</span>
+                            <span className="truncate">
+                              {[...new Set([house.neighborhood, house.location, house.city].filter(Boolean))].join(', ')}
+                            </span>
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-black text-blue-600">
