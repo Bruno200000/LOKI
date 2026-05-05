@@ -441,6 +441,8 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Empêcher les doubles clics
+    
     setError('');
     setSuccess(false);
     setLoading(true);
@@ -878,7 +880,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                           <input type="number" name="floor" value={(formData as any).floor} onChange={handleInputChange} className="w-full bg-transparent border-b border-slate-300 py-2 focus:border-ci-orange-500 outline-none font-bold" placeholder="0 pour RDC" />
                         </div>
                         <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:shadow-sm transition">
-                          <input type="checkbox" name="furnished" checked={formData.furnished} onChange={handleCheckboxChange} className="w-5 h-5 text-ci-orange-600 rounded" />
+                          <input type="checkbox" name="furnished" checked={!!formData.furnished} onChange={handleCheckboxChange} className="w-5 h-5 text-ci-orange-600 rounded" />
                           <span className="text-sm font-bold text-slate-700">Meublé</span>
                         </label>
                       </div>
@@ -893,8 +895,30 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                           </select>
                           {['has_water', 'has_electricity', 'is_flat', 'has_fence'].map(key => (
                              <label key={key} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer">
-                                <input type="checkbox" name={key} checked={(formData as any)[key]} onChange={handleCheckboxChange} className="w-5 h-5 text-ci-orange-600 rounded" />
+                                <input type="checkbox" name={key} checked={!!(formData as any)[key]} onChange={handleCheckboxChange} className="w-5 h-5 text-ci-orange-600 rounded" />
                                 <span className="text-sm font-bold text-slate-700">{key === 'has_water' ? 'Eau' : key === 'has_electricity' ? 'Électricité' : key === 'is_flat' ? 'Terrain plat' : 'Clôturé'}</span>
+                             </label>
+                          ))}
+                       </div>
+                    )}
+                    
+                    {propertyType === 'shop' && (
+                       <div className="space-y-4">
+                          <select name="shop_type" value={(formData as any).shop_type} onChange={handleInputChange} className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold">
+                            <option value="retail">Boutique / Magasin</option>
+                            <option value="restaurant">Restaurant / Café</option>
+                            <option value="office">Bureau</option>
+                            <option value="other">Autre</option>
+                          </select>
+                          {['has_toilet', 'has_storage', 'has_showcase', 'has_ac', 'has_security_system'].map(key => (
+                             <label key={key} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer">
+                                <input type="checkbox" name={key} checked={!!(formData as any)[key]} onChange={handleCheckboxChange} className="w-5 h-5 text-ci-orange-600 rounded" />
+                                <span className="text-sm font-bold text-slate-700">
+                                  {key === 'has_toilet' ? 'Toilettes' : 
+                                   key === 'has_storage' ? 'Espace de stockage' : 
+                                   key === 'has_showcase' ? 'Vitrine' : 
+                                   key === 'has_ac' ? 'Climatisation' : 'Système de sécurité'}
+                                </span>
                              </label>
                           ))}
                        </div>
@@ -916,7 +940,7 @@ export const HouseForm = ({ house, onClose, onSuccess, propertyType }: HouseForm
                           <input
                             type="checkbox"
                             name={item.name}
-                            checked={(formData as any)[item.name]}
+                            checked={!!(formData as any)[item.name]}
                             onChange={handleCheckboxChange}
                             className="w-5 h-5 text-ci-orange-600 rounded border-slate-300 focus:ring-ci-orange-500"
                           />

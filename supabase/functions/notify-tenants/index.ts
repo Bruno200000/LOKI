@@ -1,8 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from "std/http/server.ts"
+import { createClient } from "supabase"
 
-// Clé API Resend (à configurer dans les secrets Supabase)
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+// Directive pour aider l'éditeur avec les types Deno
+// @deno-types="https://deno.land/x/servest@v1.3.1/types/index.d.ts"
 
 serve(async (req) => {
   try {
@@ -17,84 +17,99 @@ serve(async (req) => {
 
     const house = payload.record
 
-    // 2. Initialisation du client Supabase en mode Service Role 
-    // Cela permet de contourner le RLS pour lire tous les profils locataires
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    // 2. Initialisation du client Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+
+    if (!supabaseUrl || !supabaseServiceKey || !resendApiKey) {
+      console.error("Variables d'environnement manquantes")
+      return new Response("Configuration serveur incomplète", { status: 500 })
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
 
     // 3. Récupérer tous les emails des locataires
-    const { data: tenants, error } = await supabase
+    const { data: tenants, error: tenantError } = await supabaseClient
       .from('profiles')
       .select('email, full_name')
       .eq('role', 'tenant')
       .not('email', 'is', null)
 
-    if (error) {
-      throw error
-    }
+    if (tenantError) throw tenantError
 
     if (!tenants || tenants.length === 0) {
       console.log("Aucun locataire trouvé avec un email.")
       return new Response("Aucun locataire à notifier", { status: 200 })
     }
 
-    console.log(`Préparation de l'envoi à ${tenants.length} locataires.`)
+    // 4. Préparation du contenu de l'email
+    const bccEmails = tenants.map(t => t.email).filter(Boolean) as string[]
+    const formattedPrice = new Intl.NumberFormat('fr-FR').format(house.price)
 
-    if (!RESEND_API_KEY) {
-      console.error("Erreur de configuration : RESEND_API_KEY manquant")
-      return new Response("Erreur de configuration serveur", { status: 500 })
-    }
+    console.log(`Envoi de notifications à ${bccEmails.length} locataires.`)
 
-    // 4. Envoi des emails en masse (via Bcc) avec Resend
-    const bccEmails = tenants.map(t => t.email).filter(Boolean)
-
+    // 5. Envoi via Resend
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
+        'Authorization': `Bearer ${resendApiKey}`
       },
       body: JSON.stringify({
-        from: 'LOKI Notifications <onboarding@resend.dev>', // Modifie ceci avec ton domaine vérifié si tu en as un
-        to: ['notifications@lokivoire.pro'], // Destinataire principal (fictif ou administratif)
-        bcc: bccEmails, // Copie cachée pour tous les locataires
+        from: 'LOKI Notifications <onboarding@resend.dev>',
+        to: ['notifications@lokivoire.pro'],
+        bcc: bccEmails,
         subject: `Nouveau bien disponible sur LOKI : ${house.title}`,
         html: `
-          <div style="font-family: sans-serif; max-w-md; margin: 0 auto; color: #333;">
-            <h2 style="color: #ea580c;">Nouveau bien sur LOKI !</h2>
-            <p>Bonjour,</p>
-            <p>Un nouveau bien qui pourrait vous intéresser vient d'être publié par un propriétaire :</p>
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #e2e8f0;">
-              <h3 style="margin-top: 0; color: #0f172a;">${house.title}</h3>
-              <p><strong>Ville :</strong> ${house.city}</p>
-              ${house.neighborhood ? `<p><strong>Quartier :</strong> ${house.neighborhood}</p>` : ''}
-              <p><strong>Prix :</strong> ${house.price.toLocaleString()} FCFA</p>
+          <div style="font-family: sans-serif; max-w-md; margin: 0 auto; color: #333; line-height: 1.6;">
+            <div style="background-color: #ea580c; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">LOKI</h1>
             </div>
-            <p>Connectez-vous vite sur la plateforme pour voir tous les détails, les photos, et contacter le propriétaire en premier !</p>
-            <a href="https://lokivoire.pro/?view=dashboard" style="display: inline-block; margin-top: 10px; padding: 12px 24px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Voir l'annonce</a>
-            <p style="font-size: 12px; color: #94a3b8; margin-top: 30px;">
-              Vous recevez cet email car vous êtes inscrit en tant que locataire sur LOKI.
+            <div style="padding: 20px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+              <h2 style="color: #0f172a; margin-top: 0;">Un nouveau bien vient d'être publié !</h2>
+              <p>Bonjour,</p>
+              <p>Une nouvelle opportunité vient d'être ajoutée sur la plateforme :</p>
+              
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #cbd5e1;">
+                <h3 style="margin-top: 0; color: #ea580c;">${house.title}</h3>
+                <p style="margin: 5px 0;"><strong>📍 Ville :</strong> ${house.city}</p>
+                ${house.neighborhood ? `<p style="margin: 5px 0;"><strong>🏡 Quartier :</strong> ${house.neighborhood}</p>` : ''}
+                <p style="margin: 5px 0;"><strong>💰 Prix :</strong> ${formattedPrice} FCFA</p>
+              </div>
+
+              <p>Ne tardez pas à consulter l'annonce et à contacter le propriétaire.</p>
+              
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="https://lokivoire.pro/?view=dashboard" 
+                   style="display: inline-block; padding: 14px 28px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                   Voir l'annonce sur LOKI
+                </a>
+              </div>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 20px;">
+              Vous recevez cette notification automatique car vous êtes inscrit comme locataire sur LOKI.
             </p>
           </div>
         `
       })
     })
 
-    const resData = await res.json()
-    console.log("Réponse de Resend:", resData)
+    if (!res.ok) {
+      const errorText = await res.text()
+      throw new Error(`Erreur Resend: ${errorText}`)
+    }
 
-    return new Response(JSON.stringify({ success: true, message: "Notifications envoyées avec succès" }), { 
+    return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" },
-      status: 200 
+      status: 200
     })
 
   } catch (error) {
-    console.error("Erreur lors de l'envoi de la notification:", error)
-    return new Response(JSON.stringify({ error: error.message }), { 
+    console.error("Erreur Notification:", error.message)
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { "Content-Type": "application/json" },
-      status: 500 
+      status: 500
     })
   }
 })
