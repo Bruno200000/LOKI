@@ -4,7 +4,7 @@ import { supabase, House } from '../../lib/supabase';
 import { X, AlertCircle, CheckCircle, Upload, Loader, FileText } from 'lucide-react';
 
 const BOUAKE_NEIGHBORHOODS = [
-  "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
+  "Quartier Bouaké", "Aéroport", "Ahougnanssou", "Air France 1", "Air France 2", "Air France 3",
   "Allokokro", "Attienkro", "Beaufort", "Belleville 1", "Belleville 2",
   "Broukro 1", "Broukro 2", "Camp Militaire", "Commerce", "Dar-es-Salam 1",
   "Dar-es-Salam 2", "Dar-es-Salam 3", "Dougouba", "Gonfreville", "Houphouët-Ville",
