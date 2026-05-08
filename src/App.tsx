@@ -194,7 +194,7 @@ function AppContent() {
 
   // Handle property details page
   // Support both /property/UUID and /property/slug-UUID
-  const propertyMatch = currentPath.match(/^\/property\/(?:.*-)?([a-f0-9-]{36})$/i);
+  const propertyMatch = currentPath.match(/^\/property\/(?:.*-)?([a-f0-9-]+)$/i);
   if (propertyMatch) {
     const propertyId = propertyMatch[1];
     return <PropertyDetailsPage propertyId={propertyId} />;
@@ -202,7 +202,7 @@ function AppContent() {
 
   // Handle booking form page
   // Support both /booking/UUID and /booking/slug-UUID
-  const bookingMatch = currentPath.match(/^\/booking\/(?:.*-)?([a-f0-9-]{36})$/i);
+  const bookingMatch = currentPath.match(/^\/booking\/(?:.*-)?([a-f0-9-]+)$/i);
   if (bookingMatch) {
     const houseId = bookingMatch[1];
     return <BookingFormPage houseId={houseId} />;
